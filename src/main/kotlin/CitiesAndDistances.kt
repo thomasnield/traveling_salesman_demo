@@ -1,3 +1,5 @@
+import java.util.concurrent.ThreadLocalRandom
+
 fun main(args: Array<String>) {
     CitiesAndDistances.distances.forEach(::println)
 }
@@ -29,6 +31,12 @@ object CitiesAndDistances {
             .map { it.split(",") }
             .map { CityPair(it[0].toInt(), it[1].toInt()) to it[2].toDouble() }
             .toMap()
+
+    val distancesByStartCityId = distances.entries.asSequence()
+            .map { it.key.city1 to (cities[it.key.city2] to it.value) }
+            .groupBy({it.first},{it.second})
+
+    val randomCity get() = ThreadLocalRandom.current().nextInt(0,CitiesAndDistances.cities.count()).let { CitiesAndDistances.cities[it] }
 }
 
 operator fun Map<CityPair,String>.get(city1: Int, city2: Int) = get(CityPair(city1,city2))

@@ -6,7 +6,6 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
 import tornadofx.*
-import java.util.concurrent.ThreadLocalRandom
 
 
 fun main(args: Array<String>) = Application.launch(TSPApp::class.java, *args)
@@ -15,7 +14,6 @@ class TSPApp: App(TSPView::class)
 
 
 
-fun randomCity() = ThreadLocalRandom.current().nextInt(0,CitiesAndDistances.cities.count()).let { CitiesAndDistances.cities[it] }
 
 class TSPView: View() {
 
@@ -48,8 +46,7 @@ class TSPView: View() {
                     }
                 }
 
-                val st = SequentialTransition()
-                    CitiesAndDistances.cities.zipWithNext { a, b ->
+                CitiesAndDistances.cities.zipWithNext { a, b ->
                         st.children += timeline(play=false) {
                                 line {
                                     stroke = Color.RED
