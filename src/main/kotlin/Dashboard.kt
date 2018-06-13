@@ -1,15 +1,21 @@
+import javafx.animation.Interpolator
+import javafx.animation.SequentialTransition
 import javafx.application.Application
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.text.FontWeight
 import tornadofx.*
+import java.util.concurrent.ThreadLocalRandom
 
 
 fun main(args: Array<String>) = Application.launch(TSPApp::class.java, *args)
 
 class TSPApp: App(TSPView::class)
 
+
+
+fun randomCity() = ThreadLocalRandom.current().nextInt(0,CitiesAndDistances.cities.count()).let { CitiesAndDistances.cities[it] }
 
 class TSPView: View() {
 
@@ -22,7 +28,7 @@ class TSPView: View() {
                 textFill = Color.RED
                 style { fontWeight = FontWeight.BOLD }
             }
-            listview(CitiesAndDistances.cities.observable()) {
+            listview(CitiesAndDistances.cities.sortedBy { it.city }.observable()) {
                 selectedCity.bind(selectionModel.selectedItemProperty())
             }
         }
@@ -41,10 +47,40 @@ class TSPView: View() {
                         }
                     }
                 }
+
+                val st = SequentialTransition()
+                    CitiesAndDistances.cities.zipWithNext { a, b ->
+                        st.children += timeline(play=false) {
+                                line {
+                                    stroke = Color.RED
+                                    strokeWidth = 5.0
+                                    startX = a.x
+                                    startY = a.y
+                                    endX = a.x
+                                    endY = a.y
+                                    keyframe(300.millis) {
+                                        keyvalue(endXProperty(), b.x, Interpolator.EASE_BOTH)
+                                        keyvalue(endYProperty(), b.y, Interpolator.EASE_BOTH)
+                                    }
+                                }
+                            }
+                        }
+
+                st.play()
             }
         }
     }
 }
+
+//COOL INITIALIZE EFFECT!
+/*
+timeline {
+    keyframe(1.seconds) {
+        keyvalue(endXProperty(), b.x, Interpolator.EASE_BOTH)
+        keyvalue(endYProperty(), b.y, Interpolator.EASE_BOTH)
+    }
+}
+ */
 
 /*
         line {
