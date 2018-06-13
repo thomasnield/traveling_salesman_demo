@@ -1,14 +1,52 @@
-import javafx.animation.Interpolator
 import javafx.application.Application
+import javafx.beans.property.SimpleObjectProperty
+import javafx.scene.image.Image
 import javafx.scene.paint.Color
+import javafx.scene.text.FontWeight
 import tornadofx.*
+
 
 fun main(args: Array<String>) = Application.launch(TSPApp::class.java, *args)
 
 class TSPApp: App(TSPView::class)
 
+
 class TSPView: View() {
-    override val root = vbox {
+
+    val selectedCity = SimpleObjectProperty<City>()
+
+    override val root = borderpane {
+
+        left = vbox {
+            label("CITIES") {
+                textFill = Color.RED
+                style { fontWeight = FontWeight.BOLD }
+            }
+            listview(CitiesAndDistances.cities.observable()) {
+                selectedCity.bind(selectionModel.selectedItemProperty())
+            }
+        }
+
+        center = pane {
+
+            imageview(Image("europe.png")) {
+                fitHeight = 1000.0
+                fitWidth = 1000.0
+
+                CitiesAndDistances.cities.forEach { city ->
+                    circle(city.x,city.y,10.0) {
+                        fill = Color.RED
+                        selectedCity.onChange {
+                            fill = if (it == city) Color.BLUE else Color.RED
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
         line {
             fill = Color.BLACK
             startX = 0.0
@@ -25,5 +63,20 @@ class TSPView: View() {
                 cycleCount = 100
             }
         }
-    }
-}
+ */
+
+/*
+addEventHandler(MouseEvent.MOUSE_CLICKED) {
+            circle(it.x,it.y,10.0) {
+                fill = Color.RED
+            }
+
+            val choices = CitiesAndDistances.cities
+
+            val dialog = ChoiceDialog<City>(choices[cityIncrementer++], choices)
+            val result = dialog.showAndWait()
+            if (result.isPresent) {
+                println("${result.get().id},${it.x},${it.y}")
+            }
+        }
+ */
