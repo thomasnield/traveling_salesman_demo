@@ -25,6 +25,7 @@ class Edge(city: City) {
     private val _edgeStartY = SimpleDoubleProperty(startCityProperty.get().y)
     private val _edgeEndX = SimpleDoubleProperty(startCityProperty.get().x)
     private val _edgeEndY = SimpleDoubleProperty(startCityProperty.get().y)
+    private val _distance = SimpleDoubleProperty(0.0)
 
     init {
         startCityProperty.onChange {
@@ -50,6 +51,7 @@ class Edge(city: City) {
 
     val edgeEndX: ReadOnlyDoubleProperty = _edgeEndX
     val edgeEndY: ReadOnlyDoubleProperty = _edgeEndY
+
 
     val line = Line().apply {
         startXProperty().bind(edgeStartX)
@@ -93,7 +95,7 @@ object OptimizationModel {
              val closest = edges.asSequence().filter { it != edge && it.startCity.id !in capturedCities }
                      .minBy { CitiesAndDistances.distances[CityPair(edge.startCity.id, it.startCity.id)]?:10000.0 }?:edges.first()
 
-            edge.endCityProperty.set(closest.startCity)
+            edge.endCity = closest.startCity
             edge = closest
         }
 /*
