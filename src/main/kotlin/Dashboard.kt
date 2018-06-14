@@ -1,5 +1,3 @@
-import javafx.animation.Interpolator
-import javafx.animation.SequentialTransition
 import javafx.application.Application
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.image.Image
@@ -46,24 +44,17 @@ class TSPView: View() {
                     }
                 }
 
-                CitiesAndDistances.cities.zipWithNext { a, b ->
-                        st.children += timeline(play=false) {
-                                line {
-                                    stroke = Color.RED
-                                    strokeWidth = 5.0
-                                    startX = a.x
-                                    startY = a.y
-                                    endX = a.x
-                                    endY = a.y
-                                    keyframe(300.millis) {
-                                        keyvalue(endXProperty(), b.x, Interpolator.EASE_BOTH)
-                                        keyvalue(endYProperty(), b.y, Interpolator.EASE_BOTH)
-                                    }
-                                }
-                            }
-                        }
+                OptimizationModel.edges.forEach {
+                    this@pane += it.line
+                }
+/*
+                OptimizationModel.edges.zipWithNext { a,b ->
+                        this@pane += a.line
+                        a.endCityProperty.set(b.startCityProperty.get())
+                }
+*/
 
-                st.play()
+                OptimizationModel.greedySearch()
             }
         }
     }
