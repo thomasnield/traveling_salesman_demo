@@ -2,6 +2,7 @@ import javafx.application.Application
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
+import javafx.scene.shape.Line
 import javafx.scene.text.FontWeight
 import tornadofx.*
 
@@ -44,17 +45,20 @@ class TSPView: View() {
                     }
                 }
 
-                OptimizationModel.edges.forEach {
-                    this@pane += it.line
+                OptimizationModel.edges.forEach { edge ->
+                    this@pane += Line().apply {
+                        startXProperty().bind(edge.edgeStartX)
+                        startYProperty().bind(edge.edgeStartY)
+                        endXProperty().bind(edge.edgeEndX)
+                        endYProperty().bind(edge.edgeEndY)
+                        strokeWidth = 3.0
+                        stroke = Color.RED
+                    }
                 }
-/*
-                OptimizationModel.edges.zipWithNext { a,b ->
-                        this@pane += a.line
-                        a.endCityProperty.set(b.startCityProperty.get())
-                }
-*/
 
-                OptimizationModel.greedySearch()
+                OptimizationModel.kOptSearch()
+                sequentialTransition.play()
+
             }
         }
     }
