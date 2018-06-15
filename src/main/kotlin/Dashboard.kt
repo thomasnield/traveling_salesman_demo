@@ -1,10 +1,11 @@
 import javafx.application.Application
+import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyIntegerWrapper
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
-import javafx.scene.shape.Line
 import tornadofx.*
+import java.util.concurrent.Callable
 
 
 fun main(args: Array<String>) = Application.launch(TSPApp::class.java, *args)
@@ -16,15 +17,22 @@ class TSPApp: App(TSPView::class)
 
 class TSPView: View() {
 
-    val selectedCity = SimpleObjectProperty<City>()
+    val selectedEdge = SimpleObjectProperty<Edge>()
 
     override val root = borderpane {
 
         left = form {
             fieldset {
                 field("CITIES") {
-                    listview(CitiesAndDistances.cities.sortedBy { it.city }.observable()) {
-                        selectedCity.bind(selectionModel.selectedItemProperty())
+                    listview(OptimizationModel.edges.observable()) {
+
+                        selectedEdge.bind(selectionModel.selectedItemProperty())
+
+                        cellFormat {
+                            textProperty().bind(
+                                    Bindings.createStringBinding(Callable { "${it.startCity}->${it.endCity}" }, it.startCityProperty, it.endCityProperty)
+                            )
+                        }
                     }
                 }
             }
@@ -44,8 +52,8 @@ class TSPView: View() {
                 CitiesAndDistances.cities.forEach { city ->
                     circle(city.x,city.y,10.0) {
                         fill = Color.RED
-                        selectedCity.onChange {
-                            fill = if (it == city) Color.BLUE else Color.RED
+                        selectedEdge.onChange {
+                            fill = if (city in setOf(it?.startCity, it?.endCity)) Color.BLUE else Color.RED
                         }
                     }
                 }
@@ -58,12 +66,14 @@ class TSPView: View() {
                         endYProperty().bind(edge.edgeEndY)
                         strokeWidth = 3.0
                         stroke = Color.RED
+                        selectedEdge.onChange {
+                            stroke = if (it == edge) Color.BLUE else Color.RED
+                        }
                     }
                 }
 
                 OptimizationModel.kOptSearch()
                 sequentialTransition.play()
-
             }
         }
     }

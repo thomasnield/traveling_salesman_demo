@@ -35,7 +35,6 @@ class Edge(city: City) {
                     keyvalue(_edgeStartX, it?.x ?: 0.0)
                     keyvalue(_edgeStartY, it?.y ?: 0.0)
                     keyvalue(_distance, distanceNow)
-
                 }
             }
         }
@@ -62,11 +61,11 @@ class Edge(city: City) {
         val endCity1 = endCity
         val endCity2 = otherEdge.endCity
 
-        if (startCity == endCity2) {
-            throw Exception("Help!")
-        }
         endCity = endCity2
         otherEdge.endCity = endCity1
+        if (startCity == otherEdge.endCity) throw Exception("Circular trip!")
+        if (otherEdge.startCity == endCity) throw Exception("Circular trip!")
+
     }
 }
 object OptimizationModel {
@@ -79,12 +78,22 @@ object OptimizationModel {
             Callable<Double> { edges.asSequence().map { it.distance.get() }.sum() },
             *edges.map { it.distance }.toTypedArray()
     )
-    fun randomEdge(except: Edge? = null): Edge = ThreadLocalRandom.current().nextInt(0, edges.size)
-            .let { edges[it] }
-            .takeIf { it.startCity != except?.startCity }?: randomEdge(except)
+    fun randomEdge(except: Edge? = null) = edges.filter { it != except }.let { it[ThreadLocalRandom.current().nextInt(0,it.size)] }
 
     fun randomSearch() {
+        val capturedCities = mutableSetOf<Int>()
 
+        val startingEdge = randomEdge()
+        var edge = startingEdge
+
+        while(capturedCities.size < CitiesAndDistances.cities.size) {
+            capturedCities += edge.startCity.id
+
+            val nextRandom = edges.asSequence().filter { it.startCity.id !in capturedCities }.selectRandom(1).first()
+
+            edge.endCity = nextRandom.startCity
+            edge = nextRandom
+        }
     }
     fun greedySearch() {
 
@@ -95,7 +104,7 @@ object OptimizationModel {
         while(capturedCities.size < CitiesAndDistances.cities.size) {
             capturedCities += edge.startCity.id
 
-             val closest = edges.asSequence().filter { it != edge && it.startCity.id !in capturedCities }
+             val closest = edges.asSequence().filter { it.startCity.id !in capturedCities }
                      .minBy { CitiesAndDistances.distances[CityPair(edge.startCity.id, it.startCity.id)]?:10000.0 }?:edges.first()
 
             edge.endCity = closest.startCity
@@ -125,10 +134,24 @@ object OptimizationModel {
 
                 val newValue = edges.asSequence().map { it.distanceNow }.sum()
 
-                if (currentValue < newValue) {
+                if (currentValue < newValue || x.startCity == y.endCity ||
+                        y.startCity == x.endCity) {
                     x.swapEndPointWith(y)
                 }
             }
         }
     }
+}
+
+fun <T> Sequence<T>.selectRandom(sampleSize: Int) = toList().selectRandom(sampleSize)
+
+fun <T> List<T>.selectRandom(sampleSize: Int) = let { list ->
+    if (list.size < sampleSize) throw Exception("Not enough elements for sample size $sampleSize")
+    val captured = mutableSetOf<Int>()
+    (0 until Int.MAX_VALUE).asSequence()
+            .takeWhile { captured.size < sampleSize }
+            .map { ThreadLocalRandom.current().nextInt(0, list.size) }
+            .filter { it !in captured }
+            .onEach { captured += it }
+            .map { list[it] }
 }

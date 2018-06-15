@@ -7,8 +7,23 @@ fun main(args: Array<String>) {
 
 data class CityPair(val city1: Int, val city2: Int)
 
-data class City(val id: Int, val city: String, val x: Double, val y: Double) {
+class City(val id: Int, val city: String, val x: Double, val y: Double) {
     override fun toString() = city
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as City
+
+        if (id != other.id) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return id
+    }
+
 }
 
 object CitiesAndDistances {
