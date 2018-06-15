@@ -1,9 +1,7 @@
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
 import javafx.beans.binding.Bindings
-import javafx.beans.property.ReadOnlyDoubleProperty
-import javafx.beans.property.SimpleDoubleProperty
-import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.*
 import tornadofx.*
 import java.util.concurrent.Callable
 import java.util.concurrent.ThreadLocalRandom
@@ -16,7 +14,7 @@ var speed = 200.millis
 
 class Edge(city: City) {
 
-    val startCityProperty = SimpleObjectProperty(city)
+    val startCityProperty = ReadOnlyObjectWrapper(city)
     var startCity by startCityProperty
 
     val endCityProperty = SimpleObjectProperty(city)
@@ -105,7 +103,7 @@ object OptimizationModel {
         }
     }
     fun kOptSearch(){
-        speed = 500.millis
+        speed = 1.millis
 
         sequentialTransition += timeline(play=false) {
             delay = 5.seconds
