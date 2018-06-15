@@ -1,9 +1,9 @@
 import javafx.application.Application
+import javafx.beans.property.ReadOnlyIntegerWrapper
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
-import javafx.scene.text.FontWeight
 import tornadofx.*
 
 
@@ -20,13 +20,18 @@ class TSPView: View() {
 
     override val root = borderpane {
 
-        left = vbox {
-            label("CITIES") {
-                textFill = Color.RED
-                style { fontWeight = FontWeight.BOLD }
+        left = form {
+            fieldset {
+                field("CITIES") {
+                    listview(CitiesAndDistances.cities.sortedBy { it.city }.observable()) {
+                        selectedCity.bind(selectionModel.selectedItemProperty())
+                    }
+                }
             }
-            listview(CitiesAndDistances.cities.sortedBy { it.city }.observable()) {
-                selectedCity.bind(selectionModel.selectedItemProperty())
+            fieldset {
+                field("DISTANCE") {
+                    textfield(OptimizationModel.distancesProperty.select { ReadOnlyIntegerWrapper(it.toInt()) })
+                }
             }
         }
 
@@ -46,7 +51,7 @@ class TSPView: View() {
                 }
 
                 OptimizationModel.edges.forEach { edge ->
-                    this@pane += Line().apply {
+                    line {
                         startXProperty().bind(edge.edgeStartX)
                         startYProperty().bind(edge.edgeStartY)
                         endXProperty().bind(edge.edgeEndX)

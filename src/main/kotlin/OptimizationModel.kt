@@ -1,17 +1,18 @@
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
+import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyDoubleProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.*
+import java.util.concurrent.Callable
 import java.util.concurrent.ThreadLocalRandom
 
 
 val sequentialTransition = SequentialTransition()
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 
-var defaultAnimation = true
-var speed = 2.seconds
+var speed = 200.millis
 
 class Edge(city: City) {
 
@@ -27,12 +28,16 @@ class Edge(city: City) {
     private val _edgeEndY = SimpleDoubleProperty(startCityProperty.get().y)
     private val _distance = SimpleDoubleProperty(0.0)
 
+    val distanceNow get() = CitiesAndDistances.distances[CityPair(startCity.id, endCity.id)]?:0.0
+
     init {
         startCityProperty.onChange {
             sequentialTransition += timeline(play = false) {
                 keyframe(speed) {
                     keyvalue(_edgeStartX, it?.x ?: 0.0)
                     keyvalue(_edgeStartY, it?.y ?: 0.0)
+                    keyvalue(_distance, distanceNow)
+
                 }
             }
         }
@@ -41,6 +46,7 @@ class Edge(city: City) {
                 keyframe(speed) {
                     keyvalue(_edgeEndX, it?.x ?: 0.0)
                     keyvalue(_edgeEndY, it?.y ?: 0.0)
+                    keyvalue(_distance, distanceNow)
                 }
             }
         }
@@ -51,6 +57,8 @@ class Edge(city: City) {
 
     val edgeEndX: ReadOnlyDoubleProperty = _edgeEndX
     val edgeEndY: ReadOnlyDoubleProperty = _edgeEndY
+
+    val distance: ReadOnlyDoubleProperty = _distance
 
     fun swapEndPointWith(otherEdge: Edge) {
         val endCity1 = endCity
@@ -69,6 +77,10 @@ object OptimizationModel {
             .map { Edge(it) }
             .toList()
 
+    val distancesProperty = Bindings.createDoubleBinding(
+            Callable<Double> { edges.asSequence().map { it.distance.get() }.sum() },
+            *edges.map { it.distance }.toTypedArray()
+    )
     fun randomEdge(except: Edge? = null): Edge = ThreadLocalRandom.current().nextInt(0, edges.size)
             .let { edges[it] }
             .takeIf { it.startCity != except?.startCity }?: randomEdge(except)
@@ -92,20 +104,33 @@ object OptimizationModel {
             edge = closest
         }
     }
-
     fun kOptSearch(){
-        speed = 300.millis
+        speed = 500.millis
 
         sequentialTransition += timeline(play=false) {
             delay = 5.seconds
         }
         greedySearch()
-        (0..10000).forEach {
+
+        (0..1000).forEach {
             val x = OptimizationModel.randomEdge()
             val y = OptimizationModel.randomEdge(x)
 
-            if (x.startCity != y.endCity && y.startCity != x.endCity)
+            if (x.endCity != y.endCity &&
+                    x.startCity != y.startCity &&
+                    x.startCity != y.endCity &&
+                    y.startCity != x.endCity) {
+
+                val currentValue = edges.asSequence().map { it.distanceNow }.sum()
+
                 x.swapEndPointWith(y)
+
+                val newValue = edges.asSequence().map { it.distanceNow }.sum()
+
+                if (currentValue < newValue) {
+                    x.swapEndPointWith(y)
+                }
+            }
         }
     }
 }
