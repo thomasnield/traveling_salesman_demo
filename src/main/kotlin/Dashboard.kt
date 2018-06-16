@@ -72,7 +72,7 @@ class TSPView: View() {
                     }
                 }
 
-                OptimizationModel.kOptSearch()
+                OptimizationModel.twoOptSearch()
                 sequentialTransition.play()
             }
         }

@@ -7,7 +7,6 @@ import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.*
 import java.util.concurrent.Callable
-import java.util.concurrent.ThreadLocalRandom
 
 
 val sequentialTransition = SequentialTransition()
@@ -60,22 +59,36 @@ class Edge(city: City) {
 
     val distance: ReadOnlyDoubleProperty = _distance
 
-    val nextEdge get() = OptimizationModel.edges.firstOrNull { it != this &&
-            startCity in setOf(it.startCity,it.endCity) &&
-            endCity in setOf(it.startCity, it.endCity)
-    }
+    val nextEdge get() = OptimizationModel.edges.firstOrNull { it.startCity == endCity } ?:
+            OptimizationModel.edges.firstOrNull { it.startCity == startCity }
 
-    fun exploreSwaps(otherEdge: Edge) {
+    fun executeSwaps1(otherEdge: Edge) {
+
         val startCity1 = startCity
         val startCity2 = otherEdge.startCity
         val endCity1 = endCity
         val endCity2 = otherEdge.endCity
 
+        // combo attempt 1
         endCity = startCity2
         otherEdge.startCity = endCity1
     }
+
+    fun exceuteSwaps2(otherEdge: Edge) {
+
+        val startCity1 = startCity
+        val startCity2 = otherEdge.startCity
+        val endCity1 = endCity
+        val endCity2 = otherEdge.endCity
+
+        // combo attempt 2
+        otherEdge.endCity = startCity1
+        startCity = endCity2
+    }
+
 }
 object OptimizationModel {
+
 
     val edges = CitiesAndDistances.cities.asSequence()
             .map { Edge(it) }
@@ -95,18 +108,17 @@ object OptimizationModel {
          .count() == edges.count()
     }
 
-    fun randomEdge(except: Edge? = null) = edges.filter { it != except }.let { it[ThreadLocalRandom.current().nextInt(0,it.size)] }
 
     fun randomSearch() {
         val capturedCities = mutableSetOf<Int>()
 
-        val startingEdge = randomEdge()
+        val startingEdge = edges.sample()
         var edge = startingEdge
 
         while(capturedCities.size < CitiesAndDistances.cities.size) {
             capturedCities += edge.startCity.id
 
-            val nextRandom = edges.asSequence().filter { it.startCity.id !in capturedCities }.selectRandom(1).first()
+           val nextRandom = edges.asSequence().filter { it.startCity.id !in capturedCities }.sampleOrNull()?:startingEdge
 
             edge.endCity = nextRandom.startCity
             edge = nextRandom
@@ -128,40 +140,42 @@ object OptimizationModel {
             edge = closest
         }
     }
-    fun kOptSearch(){
+    fun twoOptSearch(){
         speed = 1.millis
 
         sequentialTransition += timeline(play=false) {
             delay = 5.seconds
         }
-        greedySearch()
+        randomSearch()
 
         (0..1000).forEach {
-            val x = OptimizationModel.randomEdge()
-            val y = OptimizationModel.randomEdge(x)
+            val sample = OptimizationModel.edges.sample(2)
 
-            val currentValue = edges.asSequence().map { it.distanceNow }.sum()
+            val x = sample.first()
+            val y = sample.last()
 
-            x.exploreSwaps(y)
+            val currentValue1 = edges.asSequence().map { it.distanceNow }.sum()
 
-            val newValue = edges.asSequence().map { it.distanceNow }.sum()
+            x.executeSwaps1(y)
 
-            if (currentValue < newValue || !tourMaintained) {
-                x.exploreSwaps(y)
+            val newValue1 = edges.asSequence().map { it.distanceNow }.sum()
+
+            if (currentValue1 < newValue1 || !tourMaintained) {
+                x.executeSwaps1(y)
+            }
+
+            x.exceuteSwaps2(y)
+
+            val currentValue2 = edges.asSequence().map { it.distanceNow }.sum()
+            val newValue2 = edges.asSequence().map { it.distanceNow }.sum()
+
+            if (currentValue2 < newValue2 || !tourMaintained) {
+                x.exceuteSwaps2(y)
             }
         }
     }
 }
 
-fun <T> Sequence<T>.selectRandom(sampleSize: Int) = toList().selectRandom(sampleSize)
 
-fun <T> List<T>.selectRandom(sampleSize: Int) = let { list ->
-    if (list.size < sampleSize) throw Exception("Not enough elements for sample size $sampleSize")
-    val captured = mutableSetOf<Int>()
-    (0 until Int.MAX_VALUE).asSequence()
-            .takeWhile { captured.size < sampleSize }
-            .map { ThreadLocalRandom.current().nextInt(0, list.size) }
-            .filter { it !in captured }
-            .onEach { captured += it }
-            .map { list[it] }
-}
+
+
