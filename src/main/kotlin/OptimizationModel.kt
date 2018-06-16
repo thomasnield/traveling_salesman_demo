@@ -1,7 +1,10 @@
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
 import javafx.beans.binding.Bindings
-import javafx.beans.property.*
+import javafx.beans.property.ReadOnlyDoubleProperty
+import javafx.beans.property.ReadOnlyObjectWrapper
+import javafx.beans.property.SimpleDoubleProperty
+import javafx.beans.property.SimpleObjectProperty
 import tornadofx.*
 import java.util.concurrent.Callable
 import java.util.concurrent.ThreadLocalRandom
@@ -57,15 +60,19 @@ class Edge(city: City) {
 
     val distance: ReadOnlyDoubleProperty = _distance
 
-    fun swapEndPointWith(otherEdge: Edge) {
+    val nextEdge get() = OptimizationModel.edges.firstOrNull { it != this &&
+            startCity in setOf(it.startCity,it.endCity) &&
+            endCity in setOf(it.startCity, it.endCity)
+    }
+
+    fun exploreSwaps(otherEdge: Edge) {
+        val startCity1 = startCity
+        val startCity2 = otherEdge.startCity
         val endCity1 = endCity
         val endCity2 = otherEdge.endCity
 
-        endCity = endCity2
-        otherEdge.endCity = endCity1
-        if (startCity == otherEdge.endCity) throw Exception("Circular trip!")
-        if (otherEdge.startCity == endCity) throw Exception("Circular trip!")
-
+        endCity = startCity2
+        otherEdge.startCity = endCity1
     }
 }
 object OptimizationModel {
@@ -78,6 +85,16 @@ object OptimizationModel {
             Callable<Double> { edges.asSequence().map { it.distance.get() }.sum() },
             *edges.map { it.distance }.toTypedArray()
     )
+
+    val tourMaintained: Boolean get() {
+        val captured = mutableSetOf<Edge>()
+
+        return generateSequence(edges.first()) {
+            it.nextEdge?.takeIf { it !in captured }
+        }.onEach { captured += it }
+         .count() == edges.count()
+    }
+
     fun randomEdge(except: Edge? = null) = edges.filter { it != except }.let { it[ThreadLocalRandom.current().nextInt(0,it.size)] }
 
     fun randomSearch() {
@@ -123,21 +140,14 @@ object OptimizationModel {
             val x = OptimizationModel.randomEdge()
             val y = OptimizationModel.randomEdge(x)
 
-            if (x.endCity != y.endCity &&
-                    x.startCity != y.startCity &&
-                    x.startCity != y.endCity &&
-                    y.startCity != x.endCity) {
+            val currentValue = edges.asSequence().map { it.distanceNow }.sum()
 
-                val currentValue = edges.asSequence().map { it.distanceNow }.sum()
+            x.exploreSwaps(y)
 
-                x.swapEndPointWith(y)
+            val newValue = edges.asSequence().map { it.distanceNow }.sum()
 
-                val newValue = edges.asSequence().map { it.distanceNow }.sum()
-
-                if (currentValue < newValue || x.startCity == y.endCity ||
-                        y.startCity == x.endCity) {
-                    x.swapEndPointWith(y)
-                }
+            if (currentValue < newValue || !tourMaintained) {
+                x.exploreSwaps(y)
             }
         }
     }
