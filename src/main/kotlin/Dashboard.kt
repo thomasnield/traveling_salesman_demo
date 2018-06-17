@@ -24,7 +24,7 @@ class TSPView: View() {
         left = form {
             fieldset {
                 field("CITIES") {
-                    listview(OptimizationModel.edges.observable()) {
+                    listview(Model.edges.observable()) {
 
                         selectedEdge.bind(selectionModel.selectedItemProperty())
 
@@ -38,7 +38,7 @@ class TSPView: View() {
             }
             fieldset {
                 field("DISTANCE") {
-                    textfield(OptimizationModel.distancesProperty.select { ReadOnlyIntegerWrapper(it.toInt()) })
+                    textfield(Model.distancesProperty.select { ReadOnlyIntegerWrapper(it.toInt()) })
                 }
             }
         }
@@ -58,7 +58,7 @@ class TSPView: View() {
                     }
                 }
 
-                OptimizationModel.edges.forEach { edge ->
+                Model.edges.forEach { edge ->
                     line {
                         startXProperty().bind(edge.edgeStartX)
                         startYProperty().bind(edge.edgeStartY)
@@ -72,7 +72,7 @@ class TSPView: View() {
                     }
                 }
 
-                OptimizationModel.twoOptSearch()
+                SearchStrategy.TWO_OPT.execute()
                 sequentialTransition.play()
             }
         }

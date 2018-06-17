@@ -16,7 +16,7 @@ var speed = 200.millis
 
 class Edge(city: City) {
 
-    val startCityProperty = ReadOnlyObjectWrapper(city)
+    val startCityProperty = SimpleObjectProperty(city)
     var startCity by startCityProperty
 
     val endCityProperty = SimpleObjectProperty(city)
@@ -59,8 +59,8 @@ class Edge(city: City) {
 
     val distance: ReadOnlyDoubleProperty = _distance
 
-    val nextEdge get() = OptimizationModel.edges.firstOrNull { it.startCity == endCity } ?:
-            OptimizationModel.edges.firstOrNull { it.startCity == startCity }
+    val nextEdge get() = Model.edges.firstOrNull { it.startCity == endCity } ?:
+            Model.edges.firstOrNull { it.startCity == startCity }
 
     fun executeSwaps1(otherEdge: Edge) {
 
@@ -87,7 +87,7 @@ class Edge(city: City) {
     }
 
 }
-object OptimizationModel {
+object Model {
 
 
     val edges = CitiesAndDistances.cities.asSequence()
@@ -108,74 +108,91 @@ object OptimizationModel {
          .count() == edges.count()
     }
 
-
-    fun randomSearch() {
-        val capturedCities = mutableSetOf<Int>()
-
-        val startingEdge = edges.sample()
-        var edge = startingEdge
-
-        while(capturedCities.size < CitiesAndDistances.cities.size) {
-            capturedCities += edge.startCity.id
-
-           val nextRandom = edges.asSequence().filter { it.startCity.id !in capturedCities }.sampleOrNull()?:startingEdge
-
-            edge.endCity = nextRandom.startCity
-            edge = nextRandom
-        }
-    }
-    fun greedySearch() {
-
-        val capturedCities = mutableSetOf<Int>()
-
-        var edge = edges.first()
-
-        while(capturedCities.size < CitiesAndDistances.cities.size) {
-            capturedCities += edge.startCity.id
-
-             val closest = edges.asSequence().filter { it.startCity.id !in capturedCities }
-                     .minBy { CitiesAndDistances.distances[CityPair(edge.startCity.id, it.startCity.id)]?:10000.0 }?:edges.first()
-
-            edge.endCity = closest.startCity
-            edge = closest
-        }
-    }
     fun twoOptSearch(){
-        speed = 1.millis
 
-        sequentialTransition += timeline(play=false) {
-            delay = 5.seconds
-        }
-        randomSearch()
-
-        (0..1000).forEach {
-            val sample = OptimizationModel.edges.sample(2)
-
-            val x = sample.first()
-            val y = sample.last()
-
-            val currentValue1 = edges.asSequence().map { it.distanceNow }.sum()
-
-            x.executeSwaps1(y)
-
-            val newValue1 = edges.asSequence().map { it.distanceNow }.sum()
-
-            if (currentValue1 < newValue1 || !tourMaintained) {
-                x.executeSwaps1(y)
-            }
-
-            x.exceuteSwaps2(y)
-
-            val currentValue2 = edges.asSequence().map { it.distanceNow }.sum()
-            val newValue2 = edges.asSequence().map { it.distanceNow }.sum()
-
-            if (currentValue2 < newValue2 || !tourMaintained) {
-                x.exceuteSwaps2(y)
-            }
-        }
     }
 }
 
 
+enum class SearchStrategy {
 
+    RANDOM {
+        override fun execute() {
+            val capturedCities = mutableSetOf<Int>()
 
+            val startingEdge = Model.edges.sample()
+            var edge = startingEdge
+
+            while(capturedCities.size < CitiesAndDistances.cities.size) {
+                capturedCities += edge.startCity.id
+
+                val nextRandom = Model.edges.asSequence()
+                        .filter { it.startCity.id !in capturedCities }
+                        .sampleOrNull()?:startingEdge
+
+                edge.endCity = nextRandom.startCity
+                edge = nextRandom
+            }
+        }
+    },
+
+    GREEDY {
+        override fun execute() {
+            val capturedCities = mutableSetOf<Int>()
+
+            var edge = Model.edges.first()
+
+            while(capturedCities.size < CitiesAndDistances.cities.size) {
+                capturedCities += edge.startCity.id
+
+                val closest = Model.edges.asSequence().filter { it.startCity.id !in capturedCities }
+                        .minBy { CitiesAndDistances.distances[CityPair(edge.startCity.id, it.startCity.id)]?:10000.0 }?:Model.edges.first()
+
+                edge.endCity = closest.startCity
+                edge = closest
+            }
+        }
+    },
+
+    TWO_OPT {
+        override fun execute() {
+            val edges = Model.edges
+
+            speed = 1.millis
+
+            sequentialTransition += timeline(play=false) {
+                delay = 5.seconds
+            }
+
+            SearchStrategy.RANDOM.execute()
+
+            (0..1000).forEach {
+                val sample = Model.edges.sample(2)
+
+                val x = sample.first()
+                val y = sample.last()
+
+                val currentValue1 = edges.asSequence().map { it.distanceNow }.sum()
+
+                x.executeSwaps1(y)
+
+                val newValue1 = edges.asSequence().map { it.distanceNow }.sum()
+
+                if (currentValue1 < newValue1 || !Model.tourMaintained) {
+                    x.executeSwaps1(y)
+                }
+
+                x.exceuteSwaps2(y)
+
+                val currentValue2 = edges.asSequence().map { it.distanceNow }.sum()
+                val newValue2 = edges.asSequence().map { it.distanceNow }.sum()
+
+                if (currentValue2 < newValue2 || !Model.tourMaintained) {
+                    x.exceuteSwaps2(y)
+                }
+            }
+        }
+    };
+
+    abstract fun execute()
+}
