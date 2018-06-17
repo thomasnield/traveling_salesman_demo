@@ -1,7 +1,7 @@
 
 
 buildscript {
-    ext.kotlin_version = '1.2.41'
+    ext.kotlin_version = '1.2.50'
 
     repositories {
         mavenCentral()
@@ -19,6 +19,8 @@ repositories {
 
 dependencies {
     compile 'no.tornado:tornadofx:1.7.15'
+    compile 'com.github.thomasnield:rxkotlinfx:2.2.2'
+    compile 'io.reactivex.rxjava2:rxjava:2.1.14'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
 
