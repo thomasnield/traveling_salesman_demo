@@ -1,8 +1,8 @@
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
 import javafx.beans.binding.Bindings
+import javafx.beans.property.ObjectProperty
 import javafx.beans.property.ReadOnlyDoubleProperty
-import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.*
@@ -14,13 +14,26 @@ operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += t
 
 var speed = 200.millis
 
+data class Point(val x: Double, val y: Double)
+
+
+
+fun ccw(a: Point, b: Point, c: Point) =
+        (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
+
+fun intersect(a: Point, b: Point, c: Point, d: Point) =
+        ccw(a,c,d) != ccw(b,c,d) && ccw(a,b,c) != ccw(a,b,d)
+
+
 class Edge(city: City) {
 
     val startCityProperty = SimpleObjectProperty(city)
     var startCity by startCityProperty
+    val startPoint get() = startCity.let { Point(it.x,it.y) }
 
     val endCityProperty = SimpleObjectProperty(city)
     var endCity by endCityProperty
+    val endPoint get() = endCity.let { Point(it.x, it.y) }
 
     private val _edgeStartX = SimpleDoubleProperty(startCityProperty.get().x)
     private val _edgeStartY = SimpleDoubleProperty(startCityProperty.get().y)
@@ -62,30 +75,67 @@ class Edge(city: City) {
     val nextEdge get() = Model.edges.firstOrNull { it.startCity == endCity } ?:
             Model.edges.firstOrNull { it.startCity == startCity }
 
-    fun executeSwaps1(otherEdge: Edge) {
+    val intersectConflicts get() = Model.edges.asSequence()
+            .filter { it != this }
+            .filter { edge2 ->
+                startCity !in edge2.let { setOf(it.startCity, it.endCity) } &&
+                        endCity !in edge2.let { setOf(it.startCity, it.endCity) } &&
+                    intersect(startPoint, endPoint, edge2.startPoint, edge2.endPoint)
+            }
+
+    fun executeSwap(otherEdge: Edge) {
+
+        val e1 = this
+        val e2 = otherEdge
 
         val startCity1 = startCity
-        val startCity2 = otherEdge.startCity
         val endCity1 = endCity
+        val startCity2 = otherEdge.startCity
         val endCity2 = otherEdge.endCity
 
-        // combo attempt 1
-        endCity = startCity2
-        otherEdge.startCity = endCity1
+        class Swap(val city1: City,
+                   val city2: City,
+                   val property1: ObjectProperty<City>,
+                   val property2: ObjectProperty<City>
+        ) {
+            fun execute() {
+                property1.set(city2)
+                property2.set(city1)
+            }
+            fun reverse() {
+                val p1 = property1.get()
+                val p2 = property2.get()
+                property1.set(p2)
+                property2.set(p1)
+            }
+        }
+        val distance = Model.edges.map { it.distanceNow }.sum()
+
+        sequenceOf(
+                Swap(startCity1, startCity2, e1.startCityProperty, e2.startCityProperty),
+                Swap(endCity1, endCity2, e1.endCityProperty, e2.endCityProperty),
+
+                Swap(startCity1, endCity2, e1.startCityProperty, e2.endCityProperty),
+                Swap(endCity1, startCity2, e1.endCityProperty, e2.startCityProperty)
+
+        ).map { swap ->
+            swap.execute()
+/*
+            println(e1)
+            println(e2)
+            println()*/
+            // Why is tour always getting broken?
+            val result = Model.tourMaintained && Model.edges.map { it.distanceNow }.sum() < distance
+
+            result to swap
+        }.filter { it.first }
+         .map { it.second }
+        .forEach {
+            it.execute()
+        }
     }
 
-    fun exceuteSwaps2(otherEdge: Edge) {
-
-        val startCity1 = startCity
-        val startCity2 = otherEdge.startCity
-        val endCity1 = endCity
-        val endCity2 = otherEdge.endCity
-
-        // combo attempt 2
-        otherEdge.endCity = startCity1
-        startCity = endCity2
-    }
-
+    override fun toString() = "$startCity-$endCity"
 }
 object Model {
 
@@ -108,9 +158,8 @@ object Model {
          .count() == edges.count()
     }
 
-    fun twoOptSearch(){
-
-    }
+    val intersectConflicts get() = edges.asSequence()
+            .flatMap { edge1 -> edge1.intersectConflicts.map { edge2 -> edge1 to edge2} }
 }
 
 
@@ -156,39 +205,20 @@ enum class SearchStrategy {
 
     TWO_OPT {
         override fun execute() {
-            val edges = Model.edges
 
-            speed = 1.millis
+            speed = 50.millis
 
             sequentialTransition += timeline(play=false) {
                 delay = 5.seconds
             }
 
-            SearchStrategy.RANDOM.execute()
+            SearchStrategy.GREEDY.execute()
 
-            (0..1000).forEach {
-                val sample = Model.edges.sample(2)
+            speed = 100.millis
 
-                val x = sample.first()
-                val y = sample.last()
-
-                val currentValue1 = edges.asSequence().map { it.distanceNow }.sum()
-
-                x.executeSwaps1(y)
-
-                val newValue1 = edges.asSequence().map { it.distanceNow }.sum()
-
-                if (currentValue1 < newValue1 || !Model.tourMaintained) {
-                    x.executeSwaps1(y)
-                }
-
-                x.exceuteSwaps2(y)
-
-                val currentValue2 = edges.asSequence().map { it.distanceNow }.sum()
-                val newValue2 = edges.asSequence().map { it.distanceNow }.sum()
-
-                if (currentValue2 < newValue2 || !Model.tourMaintained) {
-                    x.exceuteSwaps2(y)
+            (1..4).forEach {
+                Model.intersectConflicts.forEach { (x, y) ->
+                    x.executeSwap(y)
                 }
             }
         }

@@ -1,8 +1,10 @@
+import com.github.thomasnield.rxkotlinfx.events
 import javafx.application.Application
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyIntegerWrapper
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.image.Image
+import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import tornadofx.*
 import java.util.concurrent.Callable
@@ -68,6 +70,12 @@ class TSPView: View() {
                         stroke = Color.RED
                         selectedEdge.onChange {
                             stroke = if (it == edge) Color.BLUE else Color.RED
+                        }
+
+                        events(MouseEvent.MOUSE_CLICKED).subscribe {
+                            edge.intersectConflicts.forEach {
+                                println("${it.startCity}-${it.endCity}")
+                            }
                         }
                     }
                 }
