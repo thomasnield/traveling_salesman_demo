@@ -3,6 +3,7 @@ import javafx.application.Application
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyIntegerWrapper
 import javafx.beans.property.SimpleObjectProperty
+import javafx.collections.FXCollections
 import javafx.scene.image.Image
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
@@ -19,6 +20,8 @@ class TSPApp: App(TSPView::class)
 
 class TSPView: View() {
 
+    private val backingList = FXCollections.observableArrayList<Edge>()
+
     val selectedEdge = SimpleObjectProperty<Edge>()
 
     override val root = borderpane {
@@ -26,7 +29,7 @@ class TSPView: View() {
         left = form {
             fieldset {
                 field("CITIES") {
-                    listview(Model.edges.observable()) {
+                    listview(backingList) {
 
                         selectedEdge.bind(selectionModel.selectedItemProperty())
 
@@ -35,12 +38,35 @@ class TSPView: View() {
                                     Bindings.createStringBinding(Callable { "${it.startCity}->${it.endCity}" }, it.startCityProperty, it.endCityProperty)
                             )
                         }
+
                     }
                 }
             }
             fieldset {
                 field("DISTANCE") {
                     textfield(Model.distancesProperty.select { ReadOnlyIntegerWrapper(it.toInt()) })
+                }
+            }
+            fieldset {
+                field("ALGORITHM") {
+                    vbox {
+                        SearchStrategy.values().forEach { ss ->
+                            button(ss.name.replace("_", " ")) {
+                                useMaxWidth = true
+
+                                setOnAction {
+                                    sequentialTransition.children.clear()
+                                    Model.reset()
+                                    ss.execute()
+
+                                    backingList.setAll(
+                                            Model.traverseTour.toList().observable()
+                                    )
+                                    sequentialTransition.play()
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -73,61 +99,11 @@ class TSPView: View() {
                         }
 
                         events(MouseEvent.MOUSE_CLICKED).subscribe {
-                            edge.intersectConflicts.forEach {
-                                println("${it.startCity}-${it.endCity}")
-                            }
+                            selectedEdge.set(edge)
                         }
                     }
                 }
-
-                SearchStrategy.TWO_OPT.execute()
-                sequentialTransition.play()
             }
         }
     }
 }
-
-//COOL INITIALIZE EFFECT!
-/*
-timeline {
-    keyframe(1.seconds) {
-        keyvalue(endXProperty(), b.x, Interpolator.EASE_BOTH)
-        keyvalue(endYProperty(), b.y, Interpolator.EASE_BOTH)
-    }
-}
- */
-
-/*
-        line {
-            fill = Color.BLACK
-            startX = 0.0
-            startY = 0.0
-            endX = 100.0
-            endY = 100.0
-
-            timeline {
-                keyframe(3.seconds) {
-                    keyvalue(endXProperty(), 300.0, Interpolator.EASE_BOTH)
-                    keyvalue(endYProperty(),200.0, Interpolator.EASE_BOTH)
-                }
-                isAutoReverse = true
-                cycleCount = 100
-            }
-        }
- */
-
-/*
-addEventHandler(MouseEvent.MOUSE_CLICKED) {
-            circle(it.x,it.y,10.0) {
-                fill = Color.RED
-            }
-
-            val choices = CitiesAndDistances.cities
-
-            val dialog = ChoiceDialog<City>(choices[cityIncrementer++], choices)
-            val result = dialog.showAndWait()
-            if (result.isPresent) {
-                println("${result.get().id},${it.x},${it.y}")
-            }
-        }
- */

@@ -72,8 +72,8 @@ class Edge(city: City) {
 
     val distance: ReadOnlyDoubleProperty = _distance
 
-    val nextEdge get() = Model.edges.firstOrNull { it != this && it.startCity == endCity } ?:
-            Model.edges.firstOrNull { it != this && it.endCity == endCity }?.also { it.flip() }
+    val nextEdge get() = (Model.edges.firstOrNull { it != this && it.startCity == endCity }) ?:
+        (Model.edges.firstOrNull { it != this && it.endCity == endCity }?.also { it.flip() })
 
     private fun flip() {
         val city1 = startCity
@@ -127,12 +127,13 @@ class Edge(city: City) {
 
         ).takeWhile { swap ->
             swap.execute()
-            val result = Model.tourMaintained && Model.edges.map { it.distanceNow }.sum() < distance
+            val result = Model.tourMaintained //&& Model.edges.map { it.distanceNow }.sum() < distance
 
+            // why are no swaps maintaining the tour?
             if (!result) {
                 swap.reverse()
             }
-            result
+            !result
         }.count()
     }
 
@@ -150,16 +151,25 @@ object Model {
             *edges.map { it.distance }.toTypedArray()
     )
 
-    val tourMaintained: Boolean get() {
+    val traverseTour: Sequence<Edge> get() {
+        val captured = mutableSetOf<Edge>()
 
         return generateSequence(edges.first()) {
-            it.nextEdge?.takeIf { it != edges.first() }
-        }.count() == edges.count()
+            it.nextEdge?.takeIf { it !in captured }
+        }.onEach { captured += it }
     }
+
+    val tourMaintained get() =
+        traverseTour.count() == edges.count()
+
 
     val intersectConflicts get() = edges.asSequence()
             .map { edge1 -> edge1.intersectConflicts.map { edge2 -> edge1 to edge2}.sampleOrNull() }
             .filterNotNull()
+
+    fun reset() {
+        edges.forEach { it.endCity = it.startCity }
+    }
 }
 
 
@@ -203,9 +213,8 @@ enum class SearchStrategy {
         }
     },
 
-    TWO_OPT {
+/*    SPECIFIC_SWAP {
         override fun execute() {
-
             speed = 50.millis
 
             sequentialTransition += timeline(play=false) {
@@ -214,7 +223,21 @@ enum class SearchStrategy {
 
             SearchStrategy.GREEDY.execute()
 
-            speed = 100.millis
+            speed = 5.seconds
+
+            val edge1 = Model.edges.first { it.startCity.city == "Amsterdam" && it.endCity.city == "London" }
+            val edge2 = Model.edges.first { it.startCity.city == "Dublin" && it.endCity.city == "Sofia" }
+
+            edge1.executeSwap(edge2)
+        }
+
+    },*/
+    TWO_OPT {
+        override fun execute() {
+
+            speed = 200.millis
+
+            SearchStrategy.GREEDY.execute()
 
             (1..10).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
