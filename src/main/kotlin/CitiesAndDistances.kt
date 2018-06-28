@@ -1,10 +1,5 @@
 import java.util.concurrent.ThreadLocalRandom
 
-fun main(args: Array<String>) {
-    CitiesAndDistances.distances.forEach(::println)
-}
-
-
 data class CityPair(val city1: Int, val city2: Int)
 
 class City(val id: Int, val city: String, val x: Double, val y: Double) {

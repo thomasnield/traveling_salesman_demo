@@ -72,8 +72,15 @@ class Edge(city: City) {
 
     val distance: ReadOnlyDoubleProperty = _distance
 
-    val nextEdge get() = Model.edges.firstOrNull { it.startCity == endCity } ?:
-            Model.edges.firstOrNull { it.startCity == startCity }
+    val nextEdge get() = Model.edges.firstOrNull { it != this && it.startCity == endCity } ?:
+            Model.edges.firstOrNull { it != this && it.endCity == endCity }?.also { it.flip() }
+
+    private fun flip() {
+        val city1 = startCity
+        val city2 = endCity
+        startCity = city2
+        endCity = city1
+    }
 
     val intersectConflicts get() = Model.edges.asSequence()
             .filter { it != this }
@@ -118,21 +125,15 @@ class Edge(city: City) {
                 Swap(startCity1, endCity2, e1.startCityProperty, e2.endCityProperty),
                 Swap(endCity1, startCity2, e1.endCityProperty, e2.startCityProperty)
 
-        ).map { swap ->
+        ).takeWhile { swap ->
             swap.execute()
-/*
-            println(e1)
-            println(e2)
-            println()*/
-            // Why is tour always getting broken?
             val result = Model.tourMaintained && Model.edges.map { it.distanceNow }.sum() < distance
 
-            result to swap
-        }.filter { it.first }
-         .map { it.second }
-        .forEach {
-            it.execute()
-        }
+            if (!result) {
+                swap.reverse()
+            }
+            result
+        }.count()
     }
 
     override fun toString() = "$startCity-$endCity"
@@ -150,16 +151,15 @@ object Model {
     )
 
     val tourMaintained: Boolean get() {
-        val captured = mutableSetOf<Edge>()
 
         return generateSequence(edges.first()) {
-            it.nextEdge?.takeIf { it !in captured }
-        }.onEach { captured += it }
-         .count() == edges.count()
+            it.nextEdge?.takeIf { it != edges.first() }
+        }.count() == edges.count()
     }
 
     val intersectConflicts get() = edges.asSequence()
-            .flatMap { edge1 -> edge1.intersectConflicts.map { edge2 -> edge1 to edge2} }
+            .map { edge1 -> edge1.intersectConflicts.map { edge2 -> edge1 to edge2}.sampleOrNull() }
+            .filterNotNull()
 }
 
 
@@ -216,7 +216,7 @@ enum class SearchStrategy {
 
             speed = 100.millis
 
-            (1..4).forEach {
+            (1..10).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
                     x.executeSwap(y)
                 }
