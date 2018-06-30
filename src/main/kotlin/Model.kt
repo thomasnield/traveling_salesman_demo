@@ -76,10 +76,12 @@ class Edge(city: City) {
         (Model.edges.firstOrNull { it != this && it.endCity == endCity }?.also { it.flip() })
 
     private fun flip() {
+        speed = 1.millis
         val city1 = startCity
         val city2 = endCity
         startCity = city2
         endCity = city1
+        speed = 200.millis
     }
 
     val intersectConflicts get() = Model.edges.asSequence()
@@ -237,7 +239,7 @@ enum class SearchStrategy {
 
             speed = 200.millis
 
-            SearchStrategy.GREEDY.execute()
+            SearchStrategy.RANDOM.execute()
 
             (1..10).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
