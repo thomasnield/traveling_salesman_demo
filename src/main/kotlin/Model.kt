@@ -2,7 +2,6 @@ import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ObjectProperty
-import javafx.beans.property.ReadOnlyDoubleProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.*
@@ -35,11 +34,12 @@ class Edge(city: City) {
     var endCity by endCityProperty
     val endPoint get() = endCity.let { Point(it.x, it.y) }
 
-    private val _edgeStartX = SimpleDoubleProperty(startCityProperty.get().x)
-    private val _edgeStartY = SimpleDoubleProperty(startCityProperty.get().y)
-    private val _edgeEndX = SimpleDoubleProperty(startCityProperty.get().x)
-    private val _edgeEndY = SimpleDoubleProperty(startCityProperty.get().y)
-    private val _distance = SimpleDoubleProperty(0.0)
+    // animated properties
+    val edgeStartX = SimpleDoubleProperty(startCityProperty.get().x)
+    val edgeStartY = SimpleDoubleProperty(startCityProperty.get().y)
+    val edgeEndX = SimpleDoubleProperty(startCityProperty.get().x)
+    val edgeEndY = SimpleDoubleProperty(startCityProperty.get().y)
+    val distance = SimpleDoubleProperty(0.0)
 
     val distanceNow get() = CitiesAndDistances.distances[CityPair(startCity.id, endCity.id)]?:0.0
 
@@ -47,30 +47,22 @@ class Edge(city: City) {
         startCityProperty.onChange {
             sequentialTransition += timeline(play = false) {
                 keyframe(speed) {
-                    keyvalue(_edgeStartX, it?.x ?: 0.0)
-                    keyvalue(_edgeStartY, it?.y ?: 0.0)
-                    keyvalue(_distance, distanceNow)
+                    keyvalue(edgeStartX, it?.x ?: 0.0)
+                    keyvalue(edgeStartY, it?.y ?: 0.0)
+                    keyvalue(distance, distanceNow)
                 }
             }
         }
         endCityProperty.onChange {
             sequentialTransition += timeline(play = false) {
                 keyframe(speed) {
-                    keyvalue(_edgeEndX, it?.x ?: 0.0)
-                    keyvalue(_edgeEndY, it?.y ?: 0.0)
-                    keyvalue(_distance, distanceNow)
+                    keyvalue(edgeEndX, it?.x ?: 0.0)
+                    keyvalue(edgeEndY, it?.y ?: 0.0)
+                    keyvalue(distance, distanceNow)
                 }
             }
         }
     }
-
-    val edgeStartX: ReadOnlyDoubleProperty = _edgeStartX
-    val edgeStartY: ReadOnlyDoubleProperty = _edgeStartY
-
-    val edgeEndX: ReadOnlyDoubleProperty = _edgeEndX
-    val edgeEndY: ReadOnlyDoubleProperty = _edgeEndY
-
-    val distance: ReadOnlyDoubleProperty = _distance
 
     val nextEdge get() = (Model.edges.firstOrNull { it != this && it.startCity == endCity }) ?:
         (Model.edges.firstOrNull { it != this && it.endCity == endCity }?.also { it.flip() })
@@ -92,7 +84,25 @@ class Edge(city: City) {
                     intersect(startPoint, endPoint, edge2.startPoint, edge2.endPoint)
             }
 
-    fun executeSwap(otherEdge: Edge) {
+
+    class Swap(val city1: City,
+               val city2: City,
+               val property1: ObjectProperty<City>,
+               val property2: ObjectProperty<City>
+    ) {
+        fun execute() {
+            property1.set(city2)
+            property2.set(city1)
+        }
+        fun reverse() {
+            val p1 = property1.get()
+            val p2 = property2.get()
+            property1.set(p2)
+            property2.set(p1)
+        }
+    }
+
+    fun attemptSafeSwap(otherEdge: Edge): Swap? {
 
         val e1 = this
         val e2 = otherEdge
@@ -102,41 +112,21 @@ class Edge(city: City) {
         val startCity2 = otherEdge.startCity
         val endCity2 = otherEdge.endCity
 
-        class Swap(val city1: City,
-                   val city2: City,
-                   val property1: ObjectProperty<City>,
-                   val property2: ObjectProperty<City>
-        ) {
-            fun execute() {
-                property1.set(city2)
-                property2.set(city1)
-            }
-            fun reverse() {
-                val p1 = property1.get()
-                val p2 = property2.get()
-                property1.set(p2)
-                property2.set(p1)
-            }
-        }
-        val distance = Model.edges.map { it.distanceNow }.sum()
-
-        sequenceOf(
+        return sequenceOf(
                 Swap(startCity1, startCity2, e1.startCityProperty, e2.startCityProperty),
                 Swap(endCity1, endCity2, e1.endCityProperty, e2.endCityProperty),
 
                 Swap(startCity1, endCity2, e1.startCityProperty, e2.endCityProperty),
                 Swap(endCity1, startCity2, e1.endCityProperty, e2.startCityProperty)
 
-        ).takeWhile { swap ->
+        ).firstOrNull { swap ->
             swap.execute()
-            val result = Model.tourMaintained //&& Model.edges.map { it.distanceNow }.sum() < distance
-
-            // why are no swaps maintaining the tour?
+            val result = Model.tourMaintained
             if (!result) {
                 swap.reverse()
             }
-            !result
-        }.count()
+            result
+        }
     }
 
     override fun toString() = "$startCity-$endCity"
@@ -148,10 +138,12 @@ object Model {
             .map { Edge(it) }
             .toList()
 
-    val distancesProperty = Bindings.createDoubleBinding(
+    val animationDistanceProperty = Bindings.createDoubleBinding(
             Callable<Double> { edges.asSequence().map { it.distance.get() }.sum() },
             *edges.map { it.distance }.toTypedArray()
     )
+
+    val totalDistance get() = Model.edges.map { it.distanceNow }.sum()
 
     val traverseTour: Sequence<Edge> get() {
         val captured = mutableSetOf<Edge>()
@@ -230,7 +222,7 @@ enum class SearchStrategy {
             val edge1 = Model.edges.first { it.startCity.city == "Amsterdam" && it.endCity.city == "London" }
             val edge2 = Model.edges.first { it.startCity.city == "Dublin" && it.endCity.city == "Sofia" }
 
-            edge1.executeSwap(edge2)
+            edge1.attemptSafeSwap(edge2)
         }
 
     },*/
@@ -243,9 +235,28 @@ enum class SearchStrategy {
 
             (1..10).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
-                    x.executeSwap(y)
+                    x.attemptSafeSwap(y)
                 }
             }
+
+            // TODO - random swaps break everything
+
+            /*(1..100).forEach {
+                Model.edges.sampleDistinct(2).toList()
+                        .let { it.first() to it.last() }
+                        .also { (e1,e2) ->
+                            val oldDistance = Model.totalDistance
+                            e1.attemptSafeSwap(e2)?.also {
+                                if (oldDistance < Model.totalDistance) {
+                                    it.reverse()
+                                } else {
+                                    Model.intersectConflicts.forEach { (x, y) ->
+                                        x.attemptSafeSwap(y)
+                                    }
+                                }
+                            }
+                }
+            }*/
         }
     };
 

@@ -43,7 +43,7 @@ fun <T> Iterable<T>.sampleOrNull() = toList().sampleOrNull()
 /**
  * Samples a single random element `T` from an `Iterable<T>`, and returns `null` if no elements exist
  */
-fun <T> List<T>.sample(sampleSize: Int): List<T> {
+fun <T> List<T>.sampleDistinct(sampleSize: Int): List<T> {
 
     return (0..Int.MAX_VALUE).asSequence().map {
         ThreadLocalRandom.current().nextInt(0,size)
@@ -54,10 +54,4 @@ fun <T> List<T>.sample(sampleSize: Int): List<T> {
 }
 
 
-fun <T> Sequence<T>.sample(sampleSize: Int) = toList().let { list ->
-    (0..Int.MAX_VALUE).asSequence().map {
-        ThreadLocalRandom.current().nextInt(0,list.size)
-    }.distinct()
-    .take(sampleSize)
-    .map { list[it] }
-}
+fun <T> Sequence<T>.sampleDistinct(sampleSize: Int) = toList().sampleDistinct(sampleSize)

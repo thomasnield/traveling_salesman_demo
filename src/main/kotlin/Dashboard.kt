@@ -1,11 +1,9 @@
-import com.github.thomasnield.rxkotlinfx.events
 import javafx.application.Application
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyIntegerWrapper
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.scene.image.Image
-import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import tornadofx.*
 import java.util.concurrent.Callable
@@ -44,7 +42,7 @@ class TSPView: View() {
             }
             fieldset {
                 field("DISTANCE") {
-                    textfield(Model.distancesProperty.select { ReadOnlyIntegerWrapper(it.toInt()) })
+                    textfield(Model.animationDistanceProperty.select { ReadOnlyIntegerWrapper(it.toInt()) })
                 }
             }
             fieldset {
@@ -96,10 +94,6 @@ class TSPView: View() {
                         stroke = Color.RED
                         selectedEdge.onChange {
                             stroke = if (it == edge) Color.BLUE else Color.RED
-                        }
-
-                        events(MouseEvent.MOUSE_CLICKED).subscribe {
-                            selectedEdge.set(edge)
                         }
                     }
                 }
