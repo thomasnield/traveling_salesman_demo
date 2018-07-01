@@ -231,7 +231,7 @@ enum class SearchStrategy {
 
             speed = 200.millis
 
-            SearchStrategy.RANDOM.execute()
+            SearchStrategy.GREEDY.execute()
 
             (1..10).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
@@ -241,10 +241,11 @@ enum class SearchStrategy {
 
             // TODO - random swaps break everything
 
-            /*(1..100).forEach {
+/*            (1..100).forEach {
                 Model.edges.sampleDistinct(2).toList()
                         .let { it.first() to it.last() }
-                        .also { (e1,e2) ->
+                        .takeIf { it.first.startCity != it.second.endCity && it.first.endCity != it.second.startCity }
+                        ?.also { (e1,e2) ->
                             val oldDistance = Model.totalDistance
                             e1.attemptSafeSwap(e2)?.also {
                                 if (oldDistance < Model.totalDistance) {
