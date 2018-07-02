@@ -11,7 +11,8 @@ import java.util.concurrent.Callable
 val sequentialTransition = SequentialTransition()
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 
-var speed = 200.millis
+val defaultSpeed = 200.millis
+var speed = defaultSpeed
 
 data class Point(val x: Double, val y: Double)
 
@@ -73,7 +74,7 @@ class Edge(city: City) {
         val city2 = endCity
         startCity = city2
         endCity = city1
-        speed = 200.millis
+        speed = defaultSpeed
     }
 
     val intersectConflicts get() = Model.edges.asSequence()
@@ -85,22 +86,24 @@ class Edge(city: City) {
             }
 
 
-    class Swap(val city1: City,
+    class Swap(val index: Int,
+               val city1: City,
                val city2: City,
                val property1: ObjectProperty<City>,
                val property2: ObjectProperty<City>
     ) {
+
         fun execute() {
             property1.set(city2)
             property2.set(city1)
         }
         fun reverse() {
-            val p1 = property1.get()
-            val p2 = property2.get()
-            property1.set(p2)
-            property2.set(p1)
+            property1.set(city1)
+            property2.set(city2)
         }
+        override fun toString() = "$city1-$city2 (${property1.get()})-(${property2.get()})"
     }
+        private var reversed = false
 
     fun attemptSafeSwap(otherEdge: Edge): Swap? {
 
@@ -112,12 +115,16 @@ class Edge(city: City) {
         val startCity2 = otherEdge.startCity
         val endCity2 = otherEdge.endCity
 
-        return sequenceOf(
-                Swap(startCity1, startCity2, e1.startCityProperty, e2.startCityProperty),
-                Swap(endCity1, endCity2, e1.endCityProperty, e2.endCityProperty),
+        if (!Model.tourMaintained) {
+            throw Exception("TOUR BROKE B4 EXEC $startCity1->$endCity1||$startCity2->$endCity2 ==> $startCity->$endCity||${otherEdge.startCity}->${otherEdge.endCity}\r\n${Model.traverseTour.joinToString("\r\n")}")
+        }
 
-                Swap(startCity1, endCity2, e1.startCityProperty, e2.endCityProperty),
-                Swap(endCity1, startCity2, e1.endCityProperty, e2.startCityProperty)
+        return sequenceOf(
+                Swap(1, startCity1, startCity2, e1.startCityProperty, e2.startCityProperty),
+                Swap(2, endCity1, endCity2, e1.endCityProperty, e2.endCityProperty),
+
+                Swap(3, startCity1, endCity2, e1.startCityProperty, e2.endCityProperty),
+                Swap(4, endCity1, startCity2, e1.endCityProperty, e2.startCityProperty)
 
         ).firstOrNull { swap ->
             swap.execute()
@@ -153,9 +160,7 @@ object Model {
         }.onEach { captured += it }
     }
 
-    val tourMaintained get() =
-        traverseTour.count() == edges.count()
-
+    val tourMaintained get() = traverseTour.count() == edges.count()
 
     val intersectConflicts get() = edges.asSequence()
             .map { edge1 -> edge1.intersectConflicts.map { edge2 -> edge1 to edge2}.sampleOrNull() }
@@ -165,8 +170,6 @@ object Model {
         edges.forEach { it.endCity = it.startCity }
     }
 }
-
-
 enum class SearchStrategy {
 
     RANDOM {
@@ -186,6 +189,8 @@ enum class SearchStrategy {
                 edge.endCity = nextRandom.startCity
                 edge = nextRandom
             }
+
+            if (!Model.tourMaintained) throw Exception("Tour broken in RANDOM SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
         }
     },
 
@@ -204,60 +209,49 @@ enum class SearchStrategy {
                 edge.endCity = closest.startCity
                 edge = closest
             }
+            if (!Model.tourMaintained) throw Exception("Tour broken in GREEDY SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
         }
     },
 
-/*    SPECIFIC_SWAP {
-        override fun execute() {
-            speed = 50.millis
-
-            sequentialTransition += timeline(play=false) {
-                delay = 5.seconds
-            }
-
-            SearchStrategy.GREEDY.execute()
-
-            speed = 5.seconds
-
-            val edge1 = Model.edges.first { it.startCity.city == "Amsterdam" && it.endCity.city == "London" }
-            val edge2 = Model.edges.first { it.startCity.city == "Dublin" && it.endCity.city == "Sofia" }
-
-            edge1.attemptSafeSwap(edge2)
-        }
-
-    },*/
     TWO_OPT {
         override fun execute() {
 
-            speed = 200.millis
-
-            SearchStrategy.GREEDY.execute()
-
+            SearchStrategy.RANDOM.execute()
+/*
             (1..10).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
                     x.attemptSafeSwap(y)
                 }
-            }
+            }*/
+
 
             // TODO - random swaps break everything
-
-/*            (1..100).forEach {
+            (1..100).forEach { iteration ->
                 Model.edges.sampleDistinct(2).toList()
                         .let { it.first() to it.last() }
-                        .takeIf { it.first.startCity != it.second.endCity && it.first.endCity != it.second.startCity }
+                        .takeIf { it.first.endCity != it.second.startCity && it.first.startCity != it.second.endCity }
                         ?.also { (e1,e2) ->
+
                             val oldDistance = Model.totalDistance
                             e1.attemptSafeSwap(e2)?.also {
+
+                                // TODO THIS IS THE PROBLEM!!!
                                 if (oldDistance < Model.totalDistance) {
                                     it.reverse()
-                                } else {
+                                    if (!Model.tourMaintained) {
+                                        //println(Model.tourMaintained)
+                                    }
+                                }
+
+                                /* else {
                                     Model.intersectConflicts.forEach { (x, y) ->
                                         x.attemptSafeSwap(y)
                                     }
-                                }
+                                }*/
                             }
-                }
-            }*/
+                        }
+            }
+            if (!Model.tourMaintained) throw Exception("Tour broken in TWO_OPT SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
         }
     };
 

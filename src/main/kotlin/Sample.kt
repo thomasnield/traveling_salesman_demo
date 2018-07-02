@@ -45,10 +45,12 @@ fun <T> Iterable<T>.sampleOrNull() = toList().sampleOrNull()
  */
 fun <T> List<T>.sampleDistinct(sampleSize: Int): List<T> {
 
+    val cappedSampleSize = if (sampleSize > size) size else sampleSize
+
     return (0..Int.MAX_VALUE).asSequence().map {
         ThreadLocalRandom.current().nextInt(0,size)
     }.distinct()
-    .take(sampleSize)
+    .take(cappedSampleSize)
     .map { this[it] }
     .toList()
 }
