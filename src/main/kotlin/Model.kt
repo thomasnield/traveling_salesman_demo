@@ -86,25 +86,22 @@ class Edge(city: City) {
             }
 
 
-    class Swap(val index: Int,
-               val city1: City,
+    class Swap(val city1: City,
                val city2: City,
-               val property1: ObjectProperty<City>,
-               val property2: ObjectProperty<City>
+               val edge1: Edge,
+               val edge2: Edge
     ) {
 
         fun execute() {
-            property1.set(city2)
-            property2.set(city1)
+            edge1.let { sequenceOf(it.startCityProperty, it.endCityProperty) }.first { it.get() == city1 }.set(city2)
+            edge2.let { sequenceOf(it.startCityProperty, it.endCityProperty) }.first { it.get() == city2 }.set(city1)
         }
         fun reverse() {
-            property1.set(city1)
-            property2.set(city2)
+            edge1.let { sequenceOf(it.startCityProperty, it.endCityProperty) }.first { it.get() == city2 }.set(city1)
+            edge2.let { sequenceOf(it.startCityProperty, it.endCityProperty) }.first { it.get() == city1 }.set(city2)
         }
-        override fun toString() = "$city1-$city2 (${property1.get()})-(${property2.get()})"
+        override fun toString() = "$city1-$city2 ($edge1)-($edge2)"
     }
-        private var reversed = false
-
     fun attemptSafeSwap(otherEdge: Edge): Swap? {
 
         val e1 = this
@@ -115,21 +112,16 @@ class Edge(city: City) {
         val startCity2 = otherEdge.startCity
         val endCity2 = otherEdge.endCity
 
-        if (!Model.tourMaintained) {
-            throw Exception("TOUR BROKE B4 EXEC $startCity1->$endCity1||$startCity2->$endCity2 ==> $startCity->$endCity||${otherEdge.startCity}->${otherEdge.endCity}\r\n${Model.traverseTour.joinToString("\r\n")}")
-        }
-
         return sequenceOf(
-                Swap(1, startCity1, startCity2, e1.startCityProperty, e2.startCityProperty),
-                Swap(2, endCity1, endCity2, e1.endCityProperty, e2.endCityProperty),
+                Swap(startCity1, startCity2, e1, e2),
+                Swap(endCity1, endCity2, e1, e2),
 
-                Swap(3, startCity1, endCity2, e1.startCityProperty, e2.endCityProperty),
-                Swap(4, endCity1, startCity2, e1.endCityProperty, e2.startCityProperty)
+                Swap(startCity1, endCity2, e1, e2),
+                Swap(endCity1, startCity2, e1, e2)
 
         ).firstOrNull { swap ->
             swap.execute()
-            val result = Model.tourMaintained // TODO - the direction correction changes the state of the swap, which catastrophically derails the reverse() operation
-            // perhaps just have a way to restore the original sequence?
+            val result = Model.tourMaintained
             if (!result) {
                 swap.reverse()
             }
@@ -235,13 +227,8 @@ enum class SearchStrategy {
 
                             val oldDistance = Model.totalDistance
                             e1.attemptSafeSwap(e2)?.also {
-
-                                // TODO THIS IS THE PROBLEM!!!
                                 if (oldDistance < Model.totalDistance) {
                                     it.reverse()
-                                    if (!Model.tourMaintained) {
-                                        //println(Model.tourMaintained)
-                                    }
                                 }
 
                                 /* else {
