@@ -128,7 +128,8 @@ class Edge(city: City) {
 
         ).firstOrNull { swap ->
             swap.execute()
-            val result = Model.tourMaintained
+            val result = Model.tourMaintained // TODO - the direction correction changes the state of the swap, which catastrophically derails the reverse() operation
+            // perhaps just have a way to restore the original sequence?
             if (!result) {
                 swap.reverse()
             }
