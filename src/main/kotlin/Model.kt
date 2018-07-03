@@ -316,6 +316,7 @@ enum class SearchStrategy {
                     x.attemptSafeSwap(y)?.animate()
                 }
             }
+            defaultSpeed = 200.millis
         }
     };
 
