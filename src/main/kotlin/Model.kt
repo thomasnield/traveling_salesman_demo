@@ -1,7 +1,6 @@
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
 import javafx.beans.binding.Bindings
-import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.*
@@ -11,7 +10,7 @@ import java.util.concurrent.Callable
 val sequentialTransition = SequentialTransition()
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 
-val defaultSpeed = 200.millis
+var defaultSpeed = 200.millis
 var speed = defaultSpeed
 
 var defaultAnimationOn = true
@@ -45,6 +44,7 @@ class Edge(city: City) {
     val distance = SimpleDoubleProperty(0.0)
 
     val distanceNow get() = CitiesAndDistances.distances[CityPair(startCity.id, endCity.id)]?:0.0
+
 
     init {
         startCityProperty.onChange {
@@ -182,6 +182,10 @@ object Model {
             .map { edge1 -> edge1.intersectConflicts.map { edge2 -> edge1 to edge2}.sampleOrNull() }
             .filterNotNull()
 
+
+    val heatProperty = SimpleDoubleProperty(0.0)
+    val heat by heatProperty
+
     fun reset() {
         edges.forEach { it.endCity = it.startCity }
     }
@@ -271,6 +275,47 @@ enum class SearchStrategy {
                 }
             }
             if (!Model.tourMaintained) throw Exception("Tour broken in TWO_OPT SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
+        }
+    },
+
+    SIMULATED_ANNEALING {
+        override fun execute() {
+            SearchStrategy.RANDOM.execute()
+            defaultAnimationOn = false
+            defaultSpeed = 1.millis
+
+            val heatSampler = HeatSampler(startingHeat = 1000, maxHeat = 1000, coolingStep = 2)
+
+            while(heatSampler.cool()) {
+
+                println(heatSampler.ratio)
+
+                (1..100).forEach {
+                    Model.edges.sampleDistinct(2).toList()
+                            .let { it.first() to it.last() }
+                            .also { (e1,e2) ->
+
+                                val oldDistance = Model.totalDistance
+                                e1.attemptSafeSwap(e2)?.also {
+                                    when(heatSampler.draw()) {
+                                        Temperature.COLD -> if (oldDistance < Model.totalDistance) it.reverse() else it.animate()
+                                        Temperature.HOT -> it.animate()
+                                    }
+                                }
+                            }
+                }
+                sequentialTransition += timeline(play = false) {
+                    keyframe(speed) {
+                        keyvalue(Model.heatProperty, heatSampler.let { it.heat.toDouble() / it.maxHeat.toDouble() })
+                    }
+                }
+            }
+
+            (1..4).forEach {
+                Model.intersectConflicts.forEach { (x, y) ->
+                    x.attemptSafeSwap(y)?.animate()
+                }
+            }
         }
     };
 

@@ -68,6 +68,15 @@ class TSPView: View() {
                         }
                     }
                 }
+
+                field("HEAT") {
+                    progressindicator(Model.heatProperty){
+                        useMaxWidth = true
+                        style {
+                            progressColor = Color.RED
+                        }
+                    }
+                }
             }
         }
 
