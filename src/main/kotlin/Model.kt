@@ -14,6 +14,8 @@ operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += t
 val defaultSpeed = 200.millis
 var speed = defaultSpeed
 
+var defaultAnimationOn = true
+
 data class Point(val x: Double, val y: Double)
 
 
@@ -46,21 +48,35 @@ class Edge(city: City) {
 
     init {
         startCityProperty.onChange {
-            sequentialTransition += timeline(play = false) {
-                keyframe(speed) {
-                    keyvalue(edgeStartX, it?.x ?: 0.0)
-                    keyvalue(edgeStartY, it?.y ?: 0.0)
-                    keyvalue(distance, distanceNow)
+            if (defaultAnimationOn)
+                sequentialTransition += timeline(play = false) {
+                    keyframe(speed) {
+                        keyvalue(edgeStartX, it?.x ?: 0.0)
+                        keyvalue(edgeStartY, it?.y ?: 0.0)
+                        keyvalue(distance, distanceNow)
+                    }
                 }
-            }
         }
         endCityProperty.onChange {
-            sequentialTransition += timeline(play = false) {
-                keyframe(speed) {
-                    keyvalue(edgeEndX, it?.x ?: 0.0)
-                    keyvalue(edgeEndY, it?.y ?: 0.0)
-                    keyvalue(distance, distanceNow)
+            if (defaultAnimationOn)
+                sequentialTransition += timeline(play = false) {
+                    keyframe(speed) {
+                        keyvalue(edgeEndX, it?.x ?: 0.0)
+                        keyvalue(edgeEndY, it?.y ?: 0.0)
+                        keyvalue(distance, distanceNow)
+                    }
                 }
+        }
+    }
+
+    fun animateChange() {
+        sequentialTransition += timeline(play = false) {
+            keyframe(speed) {
+                keyvalue(edgeStartX, startCity?.x ?: 0.0)
+                keyvalue(edgeStartY, startCity?.y ?: 0.0)
+                keyvalue(edgeEndX, endCity?.x ?: 0.0)
+                keyvalue(edgeEndY, endCity?.y ?: 0.0)
+                keyvalue(distance, distanceNow)
             }
         }
     }
@@ -100,6 +116,13 @@ class Edge(city: City) {
             edge1.let { sequenceOf(it.startCityProperty, it.endCityProperty) }.first { it.get() == city2 }.set(city1)
             edge2.let { sequenceOf(it.startCityProperty, it.endCityProperty) }.first { it.get() == city1 }.set(city2)
         }
+
+
+        fun animate() {
+            edge1.animateChange()
+            edge2.animateChange()
+        }
+
         override fun toString() = "$city1-$city2 ($edge1)-($edge2)"
     }
     fun attemptSafeSwap(otherEdge: Edge): Swap? {
@@ -206,36 +229,38 @@ enum class SearchStrategy {
         }
     },
 
+    REMOVE_OVERLAPS {
+        override fun execute() {
+
+            SearchStrategy.RANDOM.execute()
+            defaultAnimationOn = false
+
+            (1..10).forEach {
+                Model.intersectConflicts.forEach { (x, y) ->
+                    x.attemptSafeSwap(y)?.animate()
+                }
+            }
+
+        }
+    },
     TWO_OPT {
         override fun execute() {
 
             SearchStrategy.RANDOM.execute()
-/*
-            (1..10).forEach {
-                Model.intersectConflicts.forEach { (x, y) ->
-                    x.attemptSafeSwap(y)
-                }
-            }*/
+            defaultAnimationOn = false
 
-
-            // TODO - random swaps break everything
-            (1..100).forEach { iteration ->
+            (1..2000).forEach { iteration ->
                 Model.edges.sampleDistinct(2).toList()
                         .let { it.first() to it.last() }
-                        .takeIf { it.first.endCity != it.second.startCity && it.first.startCity != it.second.endCity }
-                        ?.also { (e1,e2) ->
+                        .also { (e1,e2) ->
 
                             val oldDistance = Model.totalDistance
                             e1.attemptSafeSwap(e2)?.also {
                                 if (oldDistance < Model.totalDistance) {
                                     it.reverse()
+                                } else {
+                                    it.animate()
                                 }
-
-                                /* else {
-                                    Model.intersectConflicts.forEach { (x, y) ->
-                                        x.attemptSafeSwap(y)
-                                    }
-                                }*/
                             }
                         }
             }

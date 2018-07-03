@@ -53,6 +53,8 @@ class TSPView: View() {
                                 useMaxWidth = true
 
                                 setOnAction {
+                                    defaultAnimationOn = true
+
                                     sequentialTransition.children.clear()
                                     Model.reset()
                                     ss.execute()
