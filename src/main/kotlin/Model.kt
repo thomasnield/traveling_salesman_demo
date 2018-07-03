@@ -264,6 +264,12 @@ enum class SearchStrategy {
                             }
                         }
             }
+
+            (1..4).forEach {
+                Model.intersectConflicts.forEach { (x, y) ->
+                    x.attemptSafeSwap(y)?.animate()
+                }
+            }
             if (!Model.tourMaintained) throw Exception("Tour broken in TWO_OPT SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
         }
     };
