@@ -7,8 +7,10 @@ This is a work-in-progress to test multiple algorithms visually with animations 
 **Current Algorithms**
 
 * RANDOM
-* GREEDY 
+* GREEDY
+* OVERLAP ELIMINATION
 * 2-OPT
+* SIMULATED ANNEALING (In Development)
 
 [Video Demo Here](https://vimeo.com/277387864)
 

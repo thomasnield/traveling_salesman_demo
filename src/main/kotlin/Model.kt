@@ -284,13 +284,13 @@ enum class SearchStrategy {
             defaultAnimationOn = false
             defaultSpeed = 1.millis
 
-            val heatSampler = HeatSampler(startingHeat = 1000, maxHeat = 1000, coolingStep = 2)
+            val heatSampler = HeatSampler(startingHeat = 1000, maxHeat = 1000, coolingStep = 1)
 
             while(heatSampler.cool()) {
 
                 println(heatSampler.ratio)
 
-                (1..100).forEach {
+                (1..20).forEach {
                     Model.edges.sampleDistinct(2).toList()
                             .let { it.first() to it.last() }
                             .also { (e1,e2) ->
