@@ -10,14 +10,11 @@ import java.util.concurrent.Callable
 val sequentialTransition = SequentialTransition()
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 
-var defaultSpeed = 200.millis
+var defaultSpeed = 300.millis
 var speed = defaultSpeed
-
 var defaultAnimationOn = true
 
 data class Point(val x: Double, val y: Double)
-
-
 
 fun ccw(a: Point, b: Point, c: Point) =
         (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
@@ -68,6 +65,7 @@ class Edge(city: City) {
                 }
         }
     }
+/*
 
     fun animateChange() {
         sequentialTransition += timeline(play = false) {
@@ -80,17 +78,16 @@ class Edge(city: City) {
             }
         }
     }
+*/
 
     val nextEdge get() = (Model.edges.firstOrNull { it != this && it.startCity == endCity }) ?:
         (Model.edges.firstOrNull { it != this && it.endCity == endCity }?.also { it.flip() })
 
     private fun flip() {
-        speed = 1.millis
         val city1 = startCity
         val city2 = endCity
         startCity = city2
         endCity = city1
-        speed = defaultSpeed
     }
 
     val intersectConflicts get() = Model.edges.asSequence()
@@ -119,8 +116,17 @@ class Edge(city: City) {
 
 
         fun animate() {
-            edge1.animateChange()
-            edge2.animateChange()
+            sequentialTransition += timeline(play = false) {
+                keyframe(speed) {
+                    sequenceOf(edge1,edge2).forEach {
+                        keyvalue(it.edgeStartX, it.startCity?.x ?: 0.0)
+                        keyvalue(it.edgeStartY, it.startCity?.y ?: 0.0)
+                        keyvalue(it.edgeEndX, it.endCity?.x ?: 0.0)
+                        keyvalue(it.edgeEndY, it.endCity?.y ?: 0.0)
+                        keyvalue(it.distance, it.distanceNow)
+                    }
+                }
+            }
         }
 
         override fun toString() = "$city1-$city2 ($edge1)-($edge2)"
@@ -187,6 +193,8 @@ object Model {
     val heat by heatProperty
 
     fun reset() {
+        defaultAnimationOn = true
+        traverseTour.forEach {  }
         edges.forEach { it.endCity = it.startCity }
     }
 }
@@ -316,6 +324,7 @@ enum class SearchStrategy {
                     x.attemptSafeSwap(y)?.animate()
                 }
             }
+            defaultAnimationOn = true
             defaultSpeed = 200.millis
         }
     };
