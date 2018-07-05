@@ -1,5 +1,10 @@
 import java.util.concurrent.ThreadLocalRandom
 
+
+class WeightedBooleanRandom(val trueProbability: Double) {
+
+    fun draw() = ThreadLocalRandom.current().nextDouble(0.0,1.0) <= trueProbability
+}
 class HeatSampler(val startingHeat: Int, val maxHeat: Int , val coolingStep: Int)  {
 
     init {

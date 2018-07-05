@@ -26,14 +26,14 @@ class TSPView: View() {
 
         left = form {
             fieldset {
-                field("CITIES") {
+                field("ROUTE") {
                     listview(backingList) {
 
                         selectedEdge.bind(selectionModel.selectedItemProperty())
 
                         cellFormat {
                             textProperty().bind(
-                                    Bindings.createStringBinding(Callable { "${it.startCity}->${it.endCity}" }, it.startCityProperty, it.endCityProperty)
+                                    Bindings.createStringBinding(Callable { "${it.startCity}→${it.endCity}" }, it.startCityProperty, it.endCityProperty)
                             )
                         }
 

@@ -10,7 +10,7 @@ This is a work-in-progress to test multiple algorithms visually with animations 
 * GREEDY
 * OVERLAP ELIMINATION
 * 2-OPT
-* SIMULATED ANNEALING (In Development)
+* SIMULATED ANNEALING
 
 [Video Demo Here](https://vimeo.com/277387864)
 
