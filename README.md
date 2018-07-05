@@ -1,6 +1,6 @@
 # Traveling Salesman Demo
 
-[>>WATCH VIDEO HERE<<](https://vimeo.com/278408438)
+[WATCH VIDEO HERE](https://vimeo.com/278408438)
 
 ### Built with JavaFX/TornadoFX and Kotlin
 
