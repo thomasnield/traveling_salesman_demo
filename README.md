@@ -14,4 +14,4 @@ This is a work-in-progress to test multiple algorithms visually with animations 
 
 [Video Demo Here](https://vimeo.com/277387864)
 
-![](demo.gif)
+![](https://i.imgur.com/EoZ5yJO.png)
