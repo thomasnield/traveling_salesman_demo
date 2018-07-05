@@ -1,8 +1,12 @@
 # Traveling Salesman Demo
 
+[WATCH VIDEO HERE](https://vimeo.com/278408438)
+
 ### Built with JavaFX/TornadoFX and Kotlin
 
-This is a work-in-progress to test multiple algorithms visually with animations to solve the [Traveling Salesman Problem](https://en.wikipedia.org/wiki/Travelling_salesman_problem). 
+This is a Kotlin application (built with [TornadoFX](https://github.com/edvin/tornadofx) visuals) to demonstrate multiple algorithms to solve the [Traveling Salesman Problem](https://en.wikipedia.org/wiki/Travelling_salesman_problem). 
+
+I found this problem interesting due to its simple objective, and yet astronomically large permutations (60 cities = more tour combinations than there are atoms in the universe) that must be pruned and searched through. 
 
 **Current Algorithms**
 
@@ -12,6 +16,5 @@ This is a work-in-progress to test multiple algorithms visually with animations 
 * 2-OPT
 * SIMULATED ANNEALING
 
-[Video Demo Here](https://vimeo.com/277387864)
 
 ![](https://i.imgur.com/EoZ5yJO.png)
