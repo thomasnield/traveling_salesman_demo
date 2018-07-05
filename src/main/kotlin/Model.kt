@@ -67,6 +67,18 @@ class Edge(city: City) {
         }
     }
 
+    fun animateChange() {
+        sequentialTransition += timeline(play = false) {
+            keyframe(speed) {
+                keyvalue(edgeStartX, startCity?.x ?: 0.0)
+                keyvalue(edgeStartY, startCity?.y ?: 0.0)
+                keyvalue(edgeEndX, endCity?.x ?: 0.0)
+                keyvalue(edgeEndY, endCity?.y ?: 0.0)
+                keyvalue(distance, distanceNow)
+            }
+        }
+    }
+
     val nextEdge get() = (Model.edges.firstOrNull { it != this && it.startCity == endCity }) ?:
         (Model.edges.firstOrNull { it != this && it.endCity == endCity }?.also { it.flip() })
 
@@ -290,12 +302,67 @@ enum class SearchStrategy {
             SearchStrategy.RANDOM.execute()
             defaultAnimationOn = false
 
-            val heatSampler = TempSchedule(startingHeat = 1499, maxHeat = 1500, coolingStep = 1)
 
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()
 
-            while(heatSampler.cool()) {
+            val temperatureScalar = 75.0
+
+            val tempSchedule = sequenceOf(
+                    1000 downTo 800,
+                    800..900,
+
+                    900 downTo 700,
+                    700..800,
+
+                    800 downTo 600,
+                    600..700,
+
+                    700 downTo 500,
+                    500..600,
+
+                    600 downTo 400,
+                    400..500,
+
+                    500 downTo 0,
+                    0..1000,
+
+                    1000 downTo 500,
+                    500..1000,
+
+                    1000 downTo 500,
+                    500..1000,
+
+                    1000 downTo 500,
+                    500..1000,
+
+                    1000 downTo 500,
+                    500..1000,
+
+                    1000 downTo 800,
+                    800..900,
+
+                    900 downTo 700,
+                    700..800,
+
+                    800 downTo 600,
+                    600..700,
+
+                    700 downTo 500,
+                    500..600,
+
+                    600 downTo 400,
+                    400..500,
+
+                    500 downTo 0
+            ).flatMap { it.asSequence() }
+             .toList()
+             .let { it.asSequence().plus(it.asSequence()) }
+             .toList().toTypedArray().toIntArray().let {
+                TempSchedule(1000, it)
+            }
+
+            while(tempSchedule.cool()) {
 
                 Model.edges.sampleDistinct(2)
                         .toList()
@@ -312,13 +379,13 @@ enum class SearchStrategy {
                                     oldDistance == neighborDistance -> swap.reverse()
                                     neighborDistance == bestDistance -> swap.reverse()
                                     bestDistance > neighborDistance -> {
-                                        println("${heatSampler.ratio}: $bestDistance->$neighborDistance")
+                                        println("${tempSchedule.ratio}: $bestDistance->$neighborDistance")
                                         bestDistance = neighborDistance
                                         bestSolution = Model.toConfiguration()
                                         swap.animate()
                                     }
                                     bestDistance < neighborDistance -> {
-                                        if (WeightedBooleanRandom(exp((-(neighborDistance - bestDistance)) / heatSampler.ratio)).draw()) {
+                                        if (WeightedBooleanRandom(exp((-(neighborDistance - bestDistance)) / (tempSchedule.ratio * temperatureScalar))).draw()) {
                                             swap.animate()
                                         } else {
                                             swap.reverse()
@@ -329,15 +396,19 @@ enum class SearchStrategy {
                         }
                 sequentialTransition += timeline(play = false) {
                     keyframe(1.millis) {
-                        keyvalue(Model.heatProperty, heatSampler.ratio)
+                        keyvalue(Model.heatProperty, tempSchedule.ratio)
                     }
                 }
             }
 
-            //Model.applyConfiguration(bestSolution)
-
+            // apply best found model
+            if (Model.totalDistance > bestDistance) {
+                Model.applyConfiguration(bestSolution)
+                Model.edges.forEach { it.animateChange() }
+            }
             println("$bestDistance<==>${Model.totalDistance}")
             defaultAnimationOn = true
+
         }
     };
 
