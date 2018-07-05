@@ -290,7 +290,7 @@ enum class SearchStrategy {
             SearchStrategy.RANDOM.execute()
             defaultAnimationOn = false
 
-            val heatSampler = HeatSampler(startingHeat = 9000, maxHeat = 10000, coolingStep = 1)
+            val heatSampler = TempSchedule(startingHeat = 1499, maxHeat = 1500, coolingStep = 1)
 
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()
@@ -312,7 +312,7 @@ enum class SearchStrategy {
                                     oldDistance == neighborDistance -> swap.reverse()
                                     neighborDistance == bestDistance -> swap.reverse()
                                     bestDistance > neighborDistance -> {
-                                        println("$bestDistance->$neighborDistance")
+                                        println("${heatSampler.ratio}: $bestDistance->$neighborDistance")
                                         bestDistance = neighborDistance
                                         bestSolution = Model.toConfiguration()
                                         swap.animate()
