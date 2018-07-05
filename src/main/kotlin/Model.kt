@@ -139,7 +139,11 @@ class Edge(city: City) {
                 Swap(startCity1, endCity2, e1, e2),
                 Swap(endCity1, startCity2, e1, e2)
 
-        ).firstOrNull { swap ->
+        ).filter {
+            it.edge1.startCity !in it.edge2.let { setOf(it.startCity, it.endCity) } &&
+                    it.edge1.endCity !in it.edge2.let { setOf(it.startCity, it.endCity) }
+        }
+        .firstOrNull { swap ->
             swap.execute()
             val result = Model.tourMaintained
             if (!result) {
@@ -286,7 +290,7 @@ enum class SearchStrategy {
             SearchStrategy.RANDOM.execute()
             defaultAnimationOn = false
 
-            val heatSampler = HeatSampler(startingHeat = 90000, maxHeat = 100000, coolingStep = 5)
+            val heatSampler = HeatSampler(startingHeat = 9000, maxHeat = 10000, coolingStep = 1)
 
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()

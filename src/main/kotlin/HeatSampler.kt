@@ -11,20 +11,19 @@ class HeatSampler(val startingHeat: Int, val maxHeat: Int , val coolingStep: Int
         if (startingHeat > maxHeat) throw Exception("startingHeat $startingHeat must be less than maxHeat $maxHeat")
     }
 
-    private var _heat = startingHeat
-    val heat get() = _heat
+    var heat = startingHeat
 
-    val ratio get() = _heat.toDouble() / maxHeat.toDouble()
+    val ratio get() = heat.toDouble() / maxHeat.toDouble()
 
 
     fun draw() =  ThreadLocalRandom.current().nextInt(1,maxHeat+1)
             .let {
-                if (it < _heat) Temperature.HOT else Temperature.COLD
+                if (it < heat) Temperature.HOT else Temperature.COLD
             }
 
     fun cool(): Boolean {
-        if (_heat == 0) return false
-        _heat = if (_heat - coolingStep >= 0) _heat-coolingStep else 0
+        if (heat == 0) return false
+        heat = if (heat - coolingStep >= 0) heat-coolingStep else 0
         return true
     }
 }
