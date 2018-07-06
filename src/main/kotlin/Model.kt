@@ -374,7 +374,7 @@ enum class SearchStrategy {
                                     }
                                     bestDistance < neighborDistance -> {
 
-                                        // Desmos graph for intuition: https://www.desmos.com/calculator/obwb4hnavg
+                                        // Desmos graph for intuition: https://www.desmos.com/calculator/rbnuusfyph
                                         if (WeightedBooleanRandom(exp((-(neighborDistance - bestDistance)) / (tempSchedule.ratio * temperatureScalar))).draw()) {
                                             swap.animate()
                                         } else {
