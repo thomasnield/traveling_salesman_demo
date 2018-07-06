@@ -306,7 +306,7 @@ enum class SearchStrategy {
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()
 
-            val temperatureScalar = 75.0
+            val temperatureScalar = 75
 
             val tempSchedule = sequenceOf(
                     1000 downTo 800,
@@ -374,7 +374,7 @@ enum class SearchStrategy {
                                     }
                                     bestDistance < neighborDistance -> {
 
-                                        // Desmos graph for intuition: https://www.desmos.com/calculator/rbnuusfyph
+                                        // Desmos graph for intuition: https://www.desmos.com/calculator/mn6av6ixx2
                                         if (WeightedBooleanRandom(exp((-(neighborDistance - bestDistance)) / (tempSchedule.ratio * temperatureScalar))).draw()) {
                                             swap.animate()
                                         } else {
