@@ -11,7 +11,7 @@ import kotlin.math.exp
 val sequentialTransition = SequentialTransition()
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 
-var defaultSpeed = 200.millis
+var defaultSpeed = 300.millis
 var speed = defaultSpeed
 var defaultAnimationOn = true
 
@@ -98,10 +98,10 @@ class Edge(city: City) {
             }
 
 
-    class Swap(val city1: City,
-               val city2: City,
-               val edge1: Edge,
-               val edge2: Edge
+    class TwoSwap(val city1: City,
+                  val city2: City,
+                  val edge1: Edge,
+                  val edge2: Edge
     ) {
 
         fun execute() {
@@ -134,7 +134,7 @@ class Edge(city: City) {
 
         override fun toString() = "$city1-$city2 ($edge1)-($edge2)"
     }
-    fun attemptSafeSwap(otherEdge: Edge): Swap? {
+    fun attemptTwoSwap(otherEdge: Edge): TwoSwap? {
 
         val e1 = this
         val e2 = otherEdge
@@ -145,11 +145,11 @@ class Edge(city: City) {
         val endCity2 = otherEdge.endCity
 
         return sequenceOf(
-                Swap(startCity1, startCity2, e1, e2),
-                Swap(endCity1, endCity2, e1, e2),
+                TwoSwap(startCity1, startCity2, e1, e2),
+                TwoSwap(endCity1, endCity2, e1, e2),
 
-                Swap(startCity1, endCity2, e1, e2),
-                Swap(endCity1, startCity2, e1, e2)
+                TwoSwap(startCity1, endCity2, e1, e2),
+                TwoSwap(endCity1, startCity2, e1, e2)
 
         ).filter {
             it.edge1.startCity !in it.edge2.let { setOf(it.startCity, it.endCity) } &&
@@ -261,7 +261,7 @@ enum class SearchStrategy {
 
             (1..10).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
-                    x.attemptSafeSwap(y)?.animate()
+                    x.attemptTwoSwap(y)?.animate()
                 }
             }
 
@@ -279,7 +279,7 @@ enum class SearchStrategy {
                         .also { (e1,e2) ->
 
                             val oldDistance = Model.totalDistance
-                            e1.attemptSafeSwap(e2)?.also {
+                            e1.attemptTwoSwap(e2)?.also {
                                 when {
                                     oldDistance <= Model.totalDistance -> it.reverse()
                                     oldDistance > Model.totalDistance -> it.animate()
@@ -290,7 +290,7 @@ enum class SearchStrategy {
 /*
             (1..4).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
-                    x.attemptSafeSwap(y)?.animate()
+                    x.attemptTwoSwap(y)?.animate()
                 }
             }*/
             if (!Model.tourMaintained) throw Exception("Tour broken in TWO_OPT SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
@@ -306,7 +306,7 @@ enum class SearchStrategy {
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()
 
-            val temperatureScalar = 40
+            val temperatureScalar = 30
 
             val tempSchedule = sequenceOf(
 
@@ -363,7 +363,7 @@ enum class SearchStrategy {
 
                             val oldDistance = Model.totalDistance
 
-                            e1.attemptSafeSwap(e2)?.also { swap ->
+                            e1.attemptTwoSwap(e2)?.also { swap ->
 
                                 val neighborDistance = Model.totalDistance
 
@@ -379,7 +379,10 @@ enum class SearchStrategy {
                                     bestDistance < neighborDistance -> {
 
                                         // Desmos graph for intuition: https://www.desmos.com/calculator/mn6av6ixx2
-                                        if (WeightedBooleanRandom(exp((-(neighborDistance - bestDistance)) / (tempSchedule.ratio * temperatureScalar))).draw()) {
+                                        if (weightedCoinFlip(
+                                                        exp((-(neighborDistance - bestDistance)) / (tempSchedule.ratio * temperatureScalar))
+                                                )
+                                        ) {
                                             swap.animate()
                                         } else {
                                             swap.reverse()
