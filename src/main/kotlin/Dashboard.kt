@@ -69,7 +69,7 @@ class TSPView: View() {
                     }
                 }
 
-                field("HEAT") {
+                field("TEMP") {
                     stackpane {
                         progressbar(Model.heatProperty) {
                             useMaxWidth = true

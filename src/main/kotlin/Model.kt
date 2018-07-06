@@ -327,18 +327,6 @@ enum class SearchStrategy {
                     500 downTo 0,
                     0..1000,
 
-                    1000 downTo 500,
-                    500..1000,
-
-                    1000 downTo 500,
-                    500..1000,
-
-                    1000 downTo 500,
-                    500..1000,
-
-                    1000 downTo 500,
-                    500..1000,
-
                     1000 downTo 800,
                     800..900,
 
@@ -385,6 +373,8 @@ enum class SearchStrategy {
                                         swap.animate()
                                     }
                                     bestDistance < neighborDistance -> {
+
+                                        // Desmos graph for intuition: https://www.desmos.com/calculator/obwb4hnavg
                                         if (WeightedBooleanRandom(exp((-(neighborDistance - bestDistance)) / (tempSchedule.ratio * temperatureScalar))).draw()) {
                                             swap.animate()
                                         } else {
