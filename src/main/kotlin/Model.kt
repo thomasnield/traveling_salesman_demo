@@ -306,15 +306,22 @@ enum class SearchStrategy {
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()
 
-            val temperatureScalar = 75
+            val temperatureScalar = 120
 
             val tempSchedule = sequenceOf(
-                    1000 downTo 800,
-                    800..900,
 
-                    900 downTo 700,
-                    700..800,
+/*                    800 downTo 600,
+                    600..700,
 
+                    700 downTo 500,
+                    500..600,*/
+
+                    600 downTo 400,
+                    400..500,
+
+                    500 downTo 0,
+
+                    0..800,
                     800 downTo 600,
                     600..700,
 
@@ -325,6 +332,8 @@ enum class SearchStrategy {
                     400..500,
 
                     500 downTo 0,
+
+
                     0..1000,
 
                     1000 downTo 800,
@@ -343,6 +352,7 @@ enum class SearchStrategy {
                     400..500,
 
                     500 downTo 0
+
             ).flatMap { it.asSequence() }
              .toList()
              .let { it.asSequence().plus(it.asSequence()) }
