@@ -11,7 +11,7 @@ import kotlin.math.exp
 val sequentialTransition = SequentialTransition()
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 
-var defaultSpeed = 300.millis
+var defaultSpeed = 200.millis
 var speed = defaultSpeed
 var defaultAnimationOn = true
 
@@ -306,46 +306,89 @@ enum class SearchStrategy {
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()
 
-            val temperatureScalar = 30
-
             val tempSchedule = sequenceOf(
 
+
+                    // modest wave 1
                     800 downTo 600,
-                    600..700,
-
-                    700 downTo 500,
-                    500..600,
-
-                    600 downTo 400,
-                    400..500,
-
-                    500 downTo 0,
-
-                    0..600,
-                    600 downTo 400,
-                    400..500,
-
-                    500 downTo 0,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
 
 
-                    0..1000,
+                    // modest wave 2
+                    800 downTo 600,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
 
-                    1000 downTo 800,
-                    800..900,
 
-                    900 downTo 700,
-                    700..800,
+                    // high heat wave 1
+                    2000 downTo 600 step 20,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
 
                     800 downTo 600,
-                    600..700,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
 
-                    700 downTo 500,
-                    500..600,
 
-                    600 downTo 400,
-                    400..500,
+                    // high heat wave 2
+                    3000 downTo 600 step 30,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
 
-                    500 downTo 0
+                    800 downTo 600,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
+
+                    800 downTo 600,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0 ,
+
+                    // high heat wave 3
+                    4000 downTo 600 step 200,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
+
+                    2000 downTo 600,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
+
+                    800 downTo 600,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
+
+                    // high heat wave 4
+                    6000 downTo 600 step 100,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
+
+                    800 downTo 600,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0
 
             ).flatMap { it.asSequence() }
              .toList()
@@ -354,7 +397,7 @@ enum class SearchStrategy {
                 TempSchedule(1000, it)
             }
 
-            while(tempSchedule.cool()) {
+            while(tempSchedule.next()) {
 
                 Model.edges.sampleDistinct(2)
                         .toList()
@@ -380,10 +423,12 @@ enum class SearchStrategy {
 
                                         // Desmos graph for intuition: https://www.desmos.com/calculator/mn6av6ixx2
                                         if (weightedCoinFlip(
-                                                        exp((-(neighborDistance - bestDistance)) / (tempSchedule.ratio * temperatureScalar))
+                                                        exp((-(neighborDistance - bestDistance)) / (tempSchedule.heat.toDouble() * .1))
                                                 )
                                         ) {
                                             swap.animate()
+                                            println("${tempSchedule.heat} accepting degrading solution: $bestDistance -> $neighborDistance")
+
                                         } else {
                                             swap.reverse()
                                         }

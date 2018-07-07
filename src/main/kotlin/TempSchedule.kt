@@ -15,7 +15,7 @@ class TempSchedule(val maxTemp: Int, val temperatureSequence: IntArray)  {
     val heat get() = temperatureSequence[index]
     val ratio get() = temperatureSequence[index].toDouble() / maxTemp.toDouble()
 
-    fun cool(): Boolean {
+    fun next(): Boolean {
         if (index == (temperatureSequence.size-1)) return false
         index++
         return true
