@@ -205,9 +205,15 @@ object Model {
     val heat by heatProperty
 
     fun reset() {
-        defaultAnimationOn = true
-        traverseTour.forEach {  }
-        edges.forEach { it.endCity = it.startCity }
+        speed = 100.millis
+
+        CitiesAndDistances.cities.zip(edges).forEach { (c,e) ->
+            e.startCity = c
+            e.endCity = c
+            e.animateChange()
+        }
+
+        speed = defaultSpeed
     }
 }
 enum class SearchStrategy {
@@ -338,9 +344,14 @@ enum class SearchStrategy {
                     400..600,
                     600 downTo 0,
 
+                    // high heat wave 1
+                    3000 downTo 600 step 20,
+                    600..800,
+                    800 downTo 400,
+                    400..600,
+                    600 downTo 0,
 
-                    // high heat wave 2
-                    3000 downTo 600 step 30,
+                    2000 downTo 600 step 20,
                     600..800,
                     800 downTo 400,
                     400..600,
@@ -352,45 +363,13 @@ enum class SearchStrategy {
                     400..600,
                     600 downTo 0,
 
-                    800 downTo 600,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0 ,
-
-                    // high heat wave 3
-                    4000 downTo 600 step 200,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-                    2000 downTo 600,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-                    800 downTo 600,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-                    // high heat wave 4
-                    6000 downTo 600 step 100,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-                    800 downTo 600,
+                    1200 downTo 600,
                     600..800,
                     800 downTo 400,
                     400..600,
                     600 downTo 0
 
-            ).flatMap { it.asSequence() }
+                    ).flatMap { it.asSequence() }
              .toList()
              .let { it.asSequence().plus(it.asSequence()) }
              .toList().toTypedArray().toIntArray().let {
