@@ -17,4 +17,4 @@ I found this problem interesting due to its simple objective, and yet astronomic
 * SIMULATED ANNEALING
 
 
-![](https://i.imgur.com/EoZ5yJO.png)
+![](https://i.imgur.com/SGwg9pY.png)
