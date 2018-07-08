@@ -1,11 +1,12 @@
 import javafx.application.Application
 import javafx.beans.binding.Bindings
-import javafx.beans.property.ReadOnlyIntegerWrapper
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import tornadofx.*
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.concurrent.Callable
 
 
@@ -42,7 +43,11 @@ class TSPView: View() {
             }
             fieldset {
                 field("DISTANCE") {
-                    textfield(Model.animationDistanceProperty.select { ReadOnlyIntegerWrapper(it.toInt()) })
+                    textfield {
+                        Model.animationDistanceProperty.onChange {
+                            text = BigDecimal(it).setScale(2, RoundingMode.HALF_UP).toString()
+                        }
+                    }
                 }
             }
             fieldset {
@@ -55,14 +60,15 @@ class TSPView: View() {
                                 setOnAction {
                                     defaultAnimationOn = true
 
-                                    sequentialTransition.children.clear()
+                                    animationQueue.children.clear()
                                     Model.reset()
-                                    ss.execute()
 
+                                    ss.execute()
                                     backingList.setAll(
                                             Model.traverseTour.toList().observable()
                                     )
-                                    sequentialTransition.play()
+
+                                    animationQueue.play()
                                 }
                             }
                         }
@@ -71,13 +77,19 @@ class TSPView: View() {
 
                 field("TEMP") {
                     stackpane {
-                        progressbar(Model.heatProperty) {
+                        progressbar(Model.heatRatioProperty) {
                             useMaxWidth = true
                             style {
                                 accentColor = Color.RED
                             }
                         }
-                        label(Model.heatProperty)
+                        label {
+                            textFill = Color.BLACK
+
+                            Model.heatProperty.onChange {
+                                text = it.toBigDecimal().setScale(3, RoundingMode.HALF_UP).toString()
+                            }
+                        }
                     }
 
                 }

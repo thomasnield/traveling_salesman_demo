@@ -8,7 +8,7 @@ import java.util.concurrent.Callable
 import kotlin.math.exp
 
 
-val sequentialTransition = SequentialTransition()
+val animationQueue = SequentialTransition()
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 
 var defaultSpeed = 200.millis
@@ -47,7 +47,7 @@ class Edge(city: City) {
     init {
         startCityProperty.onChange {
             if (defaultAnimationOn)
-                sequentialTransition += timeline(play = false) {
+                animationQueue += timeline(play = false) {
                     keyframe(speed) {
                         keyvalue(edgeStartX, it?.x ?: 0.0)
                         keyvalue(edgeStartY, it?.y ?: 0.0)
@@ -57,7 +57,7 @@ class Edge(city: City) {
         }
         endCityProperty.onChange {
             if (defaultAnimationOn)
-                sequentialTransition += timeline(play = false) {
+                animationQueue += timeline(play = false) {
                     keyframe(speed) {
                         keyvalue(edgeEndX, it?.x ?: 0.0)
                         keyvalue(edgeEndY, it?.y ?: 0.0)
@@ -68,7 +68,7 @@ class Edge(city: City) {
     }
 
     fun animateChange() {
-        sequentialTransition += timeline(play = false) {
+        animationQueue += timeline(play = false) {
             keyframe(speed) {
                 keyvalue(edgeStartX, startCity?.x ?: 0.0)
                 keyvalue(edgeStartY, startCity?.y ?: 0.0)
@@ -115,7 +115,7 @@ class Edge(city: City) {
 
 
         fun animate() {
-            sequentialTransition += timeline(play = false) {
+            animationQueue += timeline(play = false) {
                 keyframe(speed) {
                     sequenceOf(edge1,edge2).forEach {
                         keyvalue(it.edgeStartX, it.startCity?.x ?: 0.0)
@@ -201,8 +201,12 @@ object Model {
         e.startCity = c.first
         e.endCity = c.second
     }
+
+    val heatRatioProperty = SimpleDoubleProperty(0.0)
+    var heatRatio by heatRatioProperty
+
     val heatProperty = SimpleDoubleProperty(0.0)
-    val heat by heatProperty
+    var heat by heatProperty
 
     fun reset() {
         speed = 100.millis
@@ -293,12 +297,6 @@ enum class SearchStrategy {
                             }
                         }
             }
-/*
-            (1..4).forEach {
-                Model.intersectConflicts.forEach { (x, y) ->
-                    x.attemptTwoSwap(y)?.animate()
-                }
-            }*/
             if (!Model.tourMaintained) throw Exception("Tour broken in TWO_OPT SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
         }
     },
@@ -322,7 +320,7 @@ enum class SearchStrategy {
                     }
 
             /* Regarding bestDistance check, I'm pretty sure 17509 is the global optimum, so cheating here to shorten demo for talk :) */
-            while(tempSchedule.next() && bestDistance > 17510.0) {
+            while(tempSchedule.next() /*&& bestDistance > 17510.0*/) {
 
                 Model.edges.sampleDistinct(2)
                         .toList()
@@ -364,16 +362,18 @@ enum class SearchStrategy {
                                 }
                             }
                         }
-                sequentialTransition += timeline(play = false) {
+                animationQueue += timeline(play = false) {
                     keyframe(1.millis) {
-                        keyvalue(Model.heatProperty, tempSchedule.ratio)
+                        keyvalue(Model.heatRatioProperty, tempSchedule.ratio)
+                        keyvalue(Model.heatProperty, tempSchedule.heat)
                     }
                 }
             }
 
             // reset temperature
-            sequentialTransition += timeline(play = false) {
+            animationQueue += timeline(play = false) {
                 keyframe(1.seconds) {
+                    keyvalue(Model.heatRatioProperty, 0)
                     keyvalue(Model.heatProperty, 0)
                 }
             }
