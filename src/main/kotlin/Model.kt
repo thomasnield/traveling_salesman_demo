@@ -313,18 +313,16 @@ enum class SearchStrategy {
             var bestSolution = Model.toConfiguration()
 
             val tempSchedule = sequenceOf(
-                    generateSequence(80.0) { (it - .005).takeIf { it >= 50 } },
-                    generateSequence(50.0) { (it + .005).takeIf { it <= 120 } },
-                    generateSequence(120.0) { (it - .005).takeIf { it >= 60 } },
-                    generateSequence(60.0) { (it + .005).takeIf { it <= 120 } },
-                    generateSequence(120.0) { (it - .005).takeIf { it >= 60 } }
-
+                        generateSequence(80.0) { (it - .005).takeIf { it >= 50 } },
+                        generateSequence(50.0) { (it + .005).takeIf { it <= 120 } },
+                        generateSequence(120.0) { (it - .005).takeIf { it >= 60 } }
                     ).flatMap { it }
                      .toList().toTypedArray().toDoubleArray().let {
-                        TempSchedule(100, it)
+                        TempSchedule(120, it)
                     }
 
-            while(tempSchedule.next()) {
+            /* Regarding bestDistance check, I'm pretty sure 17509 is the global optimum, so cheating here to shorten demo for talk :) */
+            while(tempSchedule.next() && bestDistance > 17510.0) {
 
                 Model.edges.sampleDistinct(2)
                         .toList()
@@ -341,19 +339,19 @@ enum class SearchStrategy {
                                     oldDistance == neighborDistance -> swap.reverse()
                                     neighborDistance == bestDistance -> swap.reverse()
                                     oldDistance > neighborDistance -> {
-                                        println("${tempSchedule.heat}: $bestDistance->$neighborDistance")
 
                                         if (bestDistance > neighborDistance) {
                                             bestDistance = neighborDistance
+                                            println("${tempSchedule.heat}: $bestDistance->$neighborDistance")
                                             bestSolution = Model.toConfiguration()
                                         }
                                         swap.animate()
                                     }
                                     oldDistance < neighborDistance -> {
 
-                                        // Desmos graph for intuition: https://www.desmos.com/calculator/mn6av6ixx2
+                                        // Desmos graph for intuition: https://www.desmos.com/calculator/fpuii1qjff
                                         if (weightedCoinFlip(
-                                                        exp((-(neighborDistance - bestDistance)) / (tempSchedule.heat))
+                                                        exp((-(neighborDistance - bestDistance)) / tempSchedule.heat)
                                                 )
                                         ) {
                                             swap.animate()
@@ -370,6 +368,13 @@ enum class SearchStrategy {
                     keyframe(1.millis) {
                         keyvalue(Model.heatProperty, tempSchedule.ratio)
                     }
+                }
+            }
+
+            // reset temperature
+            sequentialTransition += timeline(play = false) {
+                keyframe(1.seconds) {
+                    keyvalue(Model.heatProperty, 0)
                 }
             }
 
