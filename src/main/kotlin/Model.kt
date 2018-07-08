@@ -313,68 +313,16 @@ enum class SearchStrategy {
             var bestSolution = Model.toConfiguration()
 
             val tempSchedule = sequenceOf(
+                    generateSequence(80.0) { (it - .005).takeIf { it >= 50 } },
+                    generateSequence(50.0) { (it + .005).takeIf { it <= 120 } },
+                    generateSequence(120.0) { (it - .005).takeIf { it >= 60 } },
+                    generateSequence(60.0) { (it + .005).takeIf { it <= 120 } },
+                    generateSequence(120.0) { (it - .005).takeIf { it >= 60 } }
 
-
-                    // modest wave 1
-                    800 downTo 600,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-
-                    // modest wave 2
-                    800 downTo 600,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-
-                    // high heat wave 1
-                    2000 downTo 600 step 20,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-                    800 downTo 600,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-                    // high heat wave 1
-                    3000 downTo 600 step 20,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-                    2000 downTo 600 step 20,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-                    800 downTo 600,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0,
-
-                    1200 downTo 600,
-                    600..800,
-                    800 downTo 400,
-                    400..600,
-                    600 downTo 0
-
-                    ).flatMap { it.asSequence() }
-             .toList()
-             .let { it.asSequence().plus(it.asSequence()) }
-             .toList().toTypedArray().toIntArray().let {
-                TempSchedule(1000, it)
-            }
+                    ).flatMap { it }
+                     .toList().toTypedArray().toDoubleArray().let {
+                        TempSchedule(100, it)
+                    }
 
             while(tempSchedule.next()) {
 
@@ -392,17 +340,20 @@ enum class SearchStrategy {
                                 when {
                                     oldDistance == neighborDistance -> swap.reverse()
                                     neighborDistance == bestDistance -> swap.reverse()
-                                    bestDistance > neighborDistance -> {
-                                        println("${tempSchedule.ratio}: $bestDistance->$neighborDistance")
-                                        bestDistance = neighborDistance
-                                        bestSolution = Model.toConfiguration()
+                                    oldDistance > neighborDistance -> {
+                                        println("${tempSchedule.heat}: $bestDistance->$neighborDistance")
+
+                                        if (bestDistance > neighborDistance) {
+                                            bestDistance = neighborDistance
+                                            bestSolution = Model.toConfiguration()
+                                        }
                                         swap.animate()
                                     }
-                                    bestDistance < neighborDistance -> {
+                                    oldDistance < neighborDistance -> {
 
                                         // Desmos graph for intuition: https://www.desmos.com/calculator/mn6av6ixx2
                                         if (weightedCoinFlip(
-                                                        exp((-(neighborDistance - bestDistance)) / (tempSchedule.heat.toDouble() * .1))
+                                                        exp((-(neighborDistance - bestDistance)) / (tempSchedule.heat))
                                                 )
                                         ) {
                                             swap.animate()
