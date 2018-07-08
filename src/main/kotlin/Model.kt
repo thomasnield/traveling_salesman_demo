@@ -8,7 +8,7 @@ import java.util.concurrent.Callable
 import kotlin.math.exp
 
 
-val animationQueue = SequentialTransition()
+val animationQueue = DequeTransition()
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 
 var defaultSpeed = 200.millis
@@ -311,9 +311,9 @@ enum class SearchStrategy {
             var bestSolution = Model.toConfiguration()
 
             val tempSchedule = sequenceOf(
-                        generateSequence(80.0) { (it - .005).takeIf { it >= 50 } },
-                        generateSequence(50.0) { (it + .005).takeIf { it <= 120 } },
-                        generateSequence(120.0) { (it - .005).takeIf { it >= 60 } }
+                        generateSequence(80.0) { (it - .0001).takeIf { it >= 50 } },
+                        generateSequence(50.0) { (it + .0001).takeIf { it <= 120 } },
+                        generateSequence(120.0) { (it - .0001).takeIf { it >= 60 } }
                     ).flatMap { it }
                      .toList().toTypedArray().toDoubleArray().let {
                         TempSchedule(120, it)

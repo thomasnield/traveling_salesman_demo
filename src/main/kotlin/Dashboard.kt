@@ -60,15 +60,18 @@ class TSPView: View() {
                                 setOnAction {
                                     defaultAnimationOn = true
 
-                                    animationQueue.children.clear()
                                     Model.reset()
 
-                                    ss.execute()
-                                    backingList.setAll(
-                                            Model.traverseTour.toList().observable()
-                                    )
+                                    runAsync {
+                                        ss.execute()
 
-                                    animationQueue.play()
+                                    } ui {
+                                        backingList.setAll(
+                                                Model.traverseTour.toList().observable()
+                                        )
+                                    }
+
+                                    //animationQueue.play()
                                 }
                             }
                         }
