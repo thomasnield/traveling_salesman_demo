@@ -349,7 +349,7 @@ enum class SearchStrategy {
                                     }
                                     oldDistance < neighborDistance -> {
 
-                                        // Desmos graph for intuition: https://www.desmos.com/calculator/fpuii1qjff
+                                        // Desmos graph for intuition: https://www.desmos.com/calculator/ov22bey8bu
                                         if (weightedCoinFlip(
                                                         exp((-(neighborDistance - bestDistance)) / tempSchedule.heat)
                                                 )
