@@ -60,7 +60,6 @@ class TSPView: View() {
                                     useMaxWidth = true
 
                                     setOnAction {
-                                        defaultAnimationOn = true
 
                                         animationQueue.children.clear()
                                         Model.reset()

@@ -13,7 +13,6 @@ operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += t
 
 var defaultSpeed = 200.millis
 var speed = defaultSpeed
-var defaultAnimationOn = true
 
 data class Point(val x: Double, val y: Double)
 
@@ -42,30 +41,6 @@ class Edge(city: City) {
     val distance = SimpleDoubleProperty(0.0)
 
     val distanceNow get() = CitiesAndDistances.distances[CityPair(startCity.id, endCity.id)]?:0.0
-
-
-    init {
-        startCityProperty.onChange {
-            if (defaultAnimationOn)
-                animationQueue += timeline(play = false) {
-                    keyframe(speed) {
-                        keyvalue(edgeStartX, it?.x ?: 0.0)
-                        keyvalue(edgeStartY, it?.y ?: 0.0)
-                        keyvalue(distance, distanceNow)
-                    }
-                }
-        }
-        endCityProperty.onChange {
-            if (defaultAnimationOn)
-                animationQueue += timeline(play = false) {
-                    keyframe(speed) {
-                        keyvalue(edgeEndX, it?.x ?: 0.0)
-                        keyvalue(edgeEndY, it?.y ?: 0.0)
-                        keyvalue(distance, distanceNow)
-                    }
-                }
-        }
-    }
 
     fun animateChange() {
         animationQueue += timeline(play = false) {
@@ -237,6 +212,7 @@ enum class SearchStrategy {
                         .sampleOrNull()?:startingEdge
 
                 edge.endCity = nextRandom.startCity
+                edge.animateChange()
                 edge = nextRandom
             }
 
@@ -254,9 +230,10 @@ enum class SearchStrategy {
                 capturedCities += edge.startCity.id
 
                 val closest = Model.edges.asSequence().filter { it.startCity.id !in capturedCities }
-                        .minBy { CitiesAndDistances.distances[CityPair(edge.startCity.id, it.startCity.id)]?:10000.0 }?:Model.edges.first()
+                        .minBy { CitiesAndDistances.distances[CityPair(edge.startCity.id, it.startCity.id)]?:10000.0 }?: Model.edges.first()
 
                 edge.endCity = closest.startCity
+                edge.animateChange()
                 edge = closest
             }
             if (!Model.tourMaintained) throw Exception("Tour broken in GREEDY SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
@@ -267,7 +244,6 @@ enum class SearchStrategy {
         override fun execute() {
 
             SearchStrategy.RANDOM.execute()
-            defaultAnimationOn = false
 
             (1..10).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
@@ -281,7 +257,6 @@ enum class SearchStrategy {
         override fun execute() {
 
             SearchStrategy.RANDOM.execute()
-            defaultAnimationOn = false
 
             (1..2000).forEach { iteration ->
                 Model.edges.sampleDistinct(2).toList()
@@ -304,8 +279,6 @@ enum class SearchStrategy {
     SIMULATED_ANNEALING {
         override fun execute() {
             SearchStrategy.RANDOM.execute()
-            defaultAnimationOn = false
-
 
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()
@@ -384,8 +357,6 @@ enum class SearchStrategy {
                 Model.edges.forEach { it.animateChange() }
             }
             println("$bestDistance<==>${Model.totalDistance}")
-            defaultAnimationOn = true
-
         }
     };
 
