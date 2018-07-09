@@ -80,7 +80,7 @@ class TSPView: View() {
                                                 Model.traverseTour.toList().observable()
                                         )
                                         disablePlayButton.set(false)
-                                        ss.animationQueue.play()
+                                        //ss.animationQueue.play()
                                     }
                                 }
                                 right = button("\u25B6") {
