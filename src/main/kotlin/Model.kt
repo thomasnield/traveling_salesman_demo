@@ -1,15 +1,9 @@
 import javafx.animation.SequentialTransition
 import javafx.animation.Timeline
-import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleObjectProperty
 import tornadofx.*
-import java.util.concurrent.Callable
 import kotlin.math.exp
-
-
-val animationQueue = SequentialTransition()
-operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 
 var defaultSpeed = 200.millis
 var speed = defaultSpeed
@@ -33,26 +27,23 @@ class Edge(city: City) {
     var endCity by endCityProperty
     val endPoint get() = endCity.let { Point(it.x, it.y) }
 
+    val distance get() = CitiesAndDistances.distances[CityPair(startCity.id, endCity.id)]?:0.0
+
     // animated properties
     val edgeStartX = SimpleDoubleProperty(startCityProperty.get().x)
     val edgeStartY = SimpleDoubleProperty(startCityProperty.get().y)
     val edgeEndX = SimpleDoubleProperty(startCityProperty.get().x)
     val edgeEndY = SimpleDoubleProperty(startCityProperty.get().y)
-    val distance = SimpleDoubleProperty(0.0)
 
-    val distanceNow get() = CitiesAndDistances.distances[CityPair(startCity.id, endCity.id)]?:0.0
-
-    fun animateChange() {
-        animationQueue += timeline(play = false) {
+    fun animateChange() = timeline(play = false) {
             keyframe(speed) {
                 keyvalue(edgeStartX, startCity?.x ?: 0.0)
                 keyvalue(edgeStartY, startCity?.y ?: 0.0)
                 keyvalue(edgeEndX, endCity?.x ?: 0.0)
                 keyvalue(edgeEndY, endCity?.y ?: 0.0)
-                keyvalue(distance, distanceNow)
+                keyvalue(Model.distanceProperty, Model.totalDistance)
             }
         }
-    }
 
     val nextEdge get() = (Model.edges.firstOrNull { it != this && it.startCity == endCity }) ?:
         (Model.edges.firstOrNull { it != this && it.endCity == endCity }?.also { it.flip() })
@@ -89,8 +80,7 @@ class Edge(city: City) {
         }
 
 
-        fun animate() {
-            animationQueue += timeline(play = false) {
+        fun animate() = timeline(play = false) {
                 keyframe(speed) {
                     sequenceOf(edge1,edge2).forEach {
                         keyvalue(it.edgeStartX, it.startCity?.x ?: 0.0)
@@ -101,11 +91,11 @@ class Edge(city: City) {
                 }
                 keyframe(1.millis) {
                     sequenceOf(edge1,edge2).forEach {
-                        keyvalue(it.distance, it.distanceNow)
+                        keyvalue(Model.distanceProperty, Model.totalDistance)
                     }
                 }
             }
-        }
+
 
         override fun toString() = "$city1-$city2 ($edge1)-($edge2)"
     }
@@ -149,12 +139,10 @@ object Model {
             .map { Edge(it) }
             .toList()
 
-    val animationDistanceProperty = Bindings.createDoubleBinding(
-            Callable<Double> { edges.asSequence().map { it.distance.get() }.sum() },
-            *edges.map { it.distance }.toTypedArray()
-    )
+    val distanceProperty = SimpleDoubleProperty(0.0)
+    val bestDistanceProperty = SimpleDoubleProperty(0.0)
 
-    val totalDistance get() = Model.edges.map { it.distanceNow }.sum()
+    val totalDistance get() = Model.edges.map { it.distance }.sum()
 
     val traverseTour: Sequence<Edge> get() {
         val captured = mutableSetOf<Edge>()
@@ -189,7 +177,7 @@ object Model {
         CitiesAndDistances.cities.zip(edges).forEach { (c,e) ->
             e.startCity = c
             e.endCity = c
-            e.animateChange()
+            e.animateChange().play()
         }
 
         speed = defaultSpeed
@@ -199,6 +187,7 @@ enum class SearchStrategy {
 
     RANDOM {
         override fun execute() {
+            animationQueue.clear()
             val capturedCities = mutableSetOf<Int>()
 
             val startingEdge = Model.edges.sample()
@@ -212,9 +201,10 @@ enum class SearchStrategy {
                         .sampleOrNull()?:startingEdge
 
                 edge.endCity = nextRandom.startCity
-                edge.animateChange()
+                animationQueue += edge.animateChange()
                 edge = nextRandom
             }
+            Model.bestDistanceProperty.set(Model.totalDistance)
 
             if (!Model.tourMaintained) throw Exception("Tour broken in RANDOM SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
         }
@@ -222,6 +212,7 @@ enum class SearchStrategy {
 
     GREEDY {
         override fun execute() {
+            animationQueue.clear()
             val capturedCities = mutableSetOf<Int>()
 
             var edge = Model.edges.first()
@@ -233,30 +224,38 @@ enum class SearchStrategy {
                         .minBy { CitiesAndDistances.distances[CityPair(edge.startCity.id, it.startCity.id)]?:10000.0 }?: Model.edges.first()
 
                 edge.endCity = closest.startCity
-                edge.animateChange()
+                animationQueue += edge.animateChange()
                 edge = closest
             }
+
+            Model.distanceProperty.set(Model.totalDistance)
+            Model.bestDistanceProperty.set(Model.totalDistance)
             if (!Model.tourMaintained) throw Exception("Tour broken in GREEDY SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
         }
     },
 
     REMOVE_OVERLAPS {
         override fun execute() {
-
+            animationQueue.clear()
             SearchStrategy.RANDOM.execute()
+            animationQueue += SearchStrategy.RANDOM.animationQueue
 
             (1..10).forEach {
                 Model.intersectConflicts.forEach { (x, y) ->
-                    x.attemptTwoSwap(y)?.animate()
+                    x.attemptTwoSwap(y)?.animate()?.also {
+                        animationQueue += it
+                    }
                 }
             }
-
+            Model.distanceProperty.set(Model.totalDistance)
+            Model.bestDistanceProperty.set(Model.totalDistance)
         }
     },
     TWO_OPT {
         override fun execute() {
-
+            animationQueue.clear()
             SearchStrategy.RANDOM.execute()
+            animationQueue += SearchStrategy.RANDOM.animationQueue
 
             (1..2000).forEach { iteration ->
                 Model.edges.sampleDistinct(2).toList()
@@ -267,18 +266,22 @@ enum class SearchStrategy {
                             e1.attemptTwoSwap(e2)?.also {
                                 when {
                                     oldDistance <= Model.totalDistance -> it.reverse()
-                                    oldDistance > Model.totalDistance -> it.animate()
+                                    oldDistance > Model.totalDistance -> it.animate().also { animationQueue += it }
                                 }
                             }
                         }
             }
+            Model.distanceProperty.set(Model.totalDistance)
+            Model.bestDistanceProperty.set(Model.totalDistance)
             if (!Model.tourMaintained) throw Exception("Tour broken in TWO_OPT SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
         }
     },
 
     SIMULATED_ANNEALING {
         override fun execute() {
+            animationQueue.clear()
             SearchStrategy.RANDOM.execute()
+            animationQueue += SearchStrategy.RANDOM.animationQueue
 
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()
@@ -315,8 +318,9 @@ enum class SearchStrategy {
                                             bestDistance = neighborDistance
                                             println("${tempSchedule.heat}: $bestDistance->$neighborDistance")
                                             bestSolution = Model.toConfiguration()
+                                            Model.bestDistanceProperty.set(bestDistance)
                                         }
-                                        swap.animate()
+                                        animationQueue += swap.animate()
                                     }
                                     oldDistance < neighborDistance -> {
 
@@ -325,7 +329,7 @@ enum class SearchStrategy {
                                                         exp((-(neighborDistance - bestDistance)) / tempSchedule.heat)
                                                 )
                                         ) {
-                                            swap.animate()
+                                            animationQueue += swap.animate()
                                             println("${tempSchedule.heat} accepting degrading solution: $bestDistance -> $neighborDistance")
 
                                         } else {
@@ -354,11 +358,20 @@ enum class SearchStrategy {
             // apply best found model
             if (Model.totalDistance > bestDistance) {
                 Model.applyConfiguration(bestSolution)
-                Model.edges.forEach { it.animateChange() }
+                Model.edges.forEach {
+                    animationQueue += it.animateChange()
+                }
             }
             println("$bestDistance<==>${Model.totalDistance}")
         }
     };
 
+    val animationQueue = SequentialTransition()
+
     abstract fun execute()
 }
+
+
+operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
+fun SequentialTransition.clear() = children.clear()
+operator fun SequentialTransition.plusAssign(other: SequentialTransition) { children.addAll(SearchStrategy.RANDOM.animationQueue.children) }

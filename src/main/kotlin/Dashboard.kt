@@ -1,5 +1,6 @@
 import javafx.application.Application
 import javafx.beans.binding.Bindings
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.scene.image.Image
@@ -44,36 +45,48 @@ class TSPView: View() {
             fieldset {
                 field("DISTANCE") {
                     textfield {
-                        Model.animationDistanceProperty.onChange {
+                        Model.distanceProperty.onChange {
                             text = BigDecimal(it).setScale(2, RoundingMode.HALF_UP).toString()
                         }
                     }
                 }
+/*                field("BEST DISTANCE") {
+                    textfield {
+                        Model.bestDistanceProperty.onChange {
+                            text = BigDecimal(it).setScale(2, RoundingMode.HALF_UP).toString()
+                        }
+                    }
+                }*/
             }
             fieldset {
                 field("ALGORITHM") {
                     vbox {
                         SearchStrategy.values().forEach { ss ->
-                            //
+
                             borderpane {
-                                center =button(ss.name.replace("_", " ")) {
+                                val disablePlayButton = SimpleBooleanProperty(true)
+
+                                center = button(ss.name.replace("_", " ")) {
                                     useMaxWidth = true
 
                                     setOnAction {
-
-                                        animationQueue.children.clear()
                                         Model.reset()
 
                                         ss.execute()
                                         backingList.setAll(
                                                 Model.traverseTour.toList().observable()
                                         )
-
-                                        animationQueue.play()
+                                        disablePlayButton.set(false)
+                                        ss.animationQueue.play()
                                     }
                                 }
                                 right = button("\u25B6") {
                                     textFill = Color.GREEN
+                                    disableProperty().bind(disablePlayButton)
+
+                                    setOnAction {
+                                        ss.animationQueue.play()
+                                    }
                                 }
                             }
                         }
