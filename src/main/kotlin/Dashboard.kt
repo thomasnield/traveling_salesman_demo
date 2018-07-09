@@ -27,6 +27,9 @@ class TSPView: View() {
     override val root = borderpane {
 
         left = form {
+
+            title = "Traveling Salesman Problem"
+
             fieldset {
                 field("ROUTE") {
                     listview(backingList) {
