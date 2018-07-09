@@ -54,21 +54,27 @@ class TSPView: View() {
                 field("ALGORITHM") {
                     vbox {
                         SearchStrategy.values().forEach { ss ->
-                            button(ss.name.replace("_", " ")) {
-                                useMaxWidth = true
+                            //
+                            borderpane {
+                                center =button(ss.name.replace("_", " ")) {
+                                    useMaxWidth = true
 
-                                setOnAction {
-                                    defaultAnimationOn = true
+                                    setOnAction {
+                                        defaultAnimationOn = true
 
-                                    animationQueue.children.clear()
-                                    Model.reset()
+                                        animationQueue.children.clear()
+                                        Model.reset()
 
-                                    ss.execute()
-                                    backingList.setAll(
-                                            Model.traverseTour.toList().observable()
-                                    )
+                                        ss.execute()
+                                        backingList.setAll(
+                                                Model.traverseTour.toList().observable()
+                                        )
 
-                                    animationQueue.play()
+                                        animationQueue.play()
+                                    }
+                                }
+                                right = button("\u25B6") {
+                                    textFill = Color.GREEN
                                 }
                             }
                         }
