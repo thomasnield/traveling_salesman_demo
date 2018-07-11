@@ -1,6 +1,6 @@
 # Traveling Salesman Demo
 
-[WATCH VIDEO HERE](https://vimeo.com/278870108)
+[WATCH VIDEO HERE](https://www.youtube.com/watch?v=j1s69yf4a9Y)
 
 ### Built with JavaFX/TornadoFX and Kotlin
 
@@ -17,4 +17,4 @@ I found this problem interesting due to its simple objective, and yet astronomic
 * SIMULATED ANNEALING
 
 
-![](https://i.imgur.com/SGwg9pY.png)
+[![TSP Walkthrough on YouTube](https://i.imgur.com/SGwg9pY.png)](https://www.youtube.com/watch?v=j1s69yf4a9Y)
