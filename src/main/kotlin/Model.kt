@@ -364,7 +364,81 @@ enum class SearchStrategy {
             }
             println("$bestDistance<==>${Model.totalDistance}")
         }
-    };
+    };/*,
+
+    // This is painfully slow to run
+    // Branch-and-bound ojAlgo solver is probably not the best approach
+
+    INTEGER {
+        override fun execute() {
+
+            val solver = ExpressionsBasedModel()
+
+            val cities = CitiesAndDistances.cities
+
+            val cityDummies = cities.map { it to solver.variable(isInteger = true, lower = 1, upper = cities.size) }.toMap()
+
+            data class Segment(val city1: City, val city2: City) {
+                val selected = solver.variable(isBinary = true)
+                val distance get() = city1.distanceTo(city2)
+
+                val u_i = cityDummies[city1]!!
+                val u_j = cityDummies[city2]!!
+
+                init {
+                    solver.expression {
+                        set(u_i, 1)
+                        set(u_j, -1)
+                        set(selected, cities.size)
+                        lower(2)
+                        upper(cities.size -1)
+                    }
+                }
+                operator fun contains(city: City) = city == city1 || city == city2
+            }
+
+            // create segments
+            val segments = cities.flatMap { city1 ->
+                cities.filter { it != city1 }
+                        .map { city2 -> if (city1.name > city2.name) city2 to city1 else city1 to city2 }
+            }.distinct()
+            .map { Segment(it.first, it.second) }
+            .toList()
+
+            solver.apply {
+
+                // constrain each city to have two connections
+                cities.forEach { city ->
+                        expression(lower=2, upper=2) {
+                            segments.filter { city in it }.forEach { set(it.selected, 1) }
+                        }
+                }
+
+                // minimize distance objective
+                expression(weight = 1) {
+                    segments.forEach {
+                        set(it.selected, it.distance)
+                    }
+                }
+
+                // prevent sub-tours
+
+            }
+
+            // execute and plot
+            val result = solver.minimise().also(::println)
+
+            segments.filter { it.selected.value.toInt() == 1 }
+                    .zip(Model.edges)
+                    .forEach { (selectedSegment, edge) ->
+                        edge.startCity = selectedSegment.city1
+                        edge.endCity = selectedSegment.city2
+                        animationQueue += edge.animateChange()
+                    }
+
+            Model.distanceProperty.set(result.value)
+        }
+    };*/
 
     val animationQueue = SequentialTransition()
 

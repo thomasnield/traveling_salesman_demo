@@ -2,23 +2,9 @@ import java.util.concurrent.ThreadLocalRandom
 
 data class CityPair(val city1: Int, val city2: Int)
 
-class City(val id: Int, val city: String, val x: Double, val y: Double) {
-    override fun toString() = city
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as City
-
-        if (id != other.id) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return id
-    }
-
+class City(val id: Int, val name: String, val x: Double, val y: Double) {
+    override fun toString() = name
+    fun distanceTo(other: City) =CitiesAndDistances.distances[CityPair(id, other.id)]?:0.0
 }
 
 object CitiesAndDistances {
@@ -31,7 +17,7 @@ object CitiesAndDistances {
             .toMap()
 
     val citiesByString = citiesById.entries.asSequence()
-            .map { it.value.city to it.value }
+            .map { it.value.name to it.value }
             .toMap()
 
     val cities = citiesById.values.toList()
