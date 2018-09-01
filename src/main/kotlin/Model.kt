@@ -8,6 +8,7 @@ import kotlin.math.exp
 var defaultSpeed = 200.millis
 var speed = defaultSpeed
 
+
 data class Point(val x: Double, val y: Double)
 
 fun ccw(a: Point, b: Point, c: Point) =
@@ -147,8 +148,8 @@ object Model {
     val traverseTour: Sequence<Edge> get() {
         val captured = mutableSetOf<Edge>()
 
-        return generateSequence(edges.first()) {
-            it.nextEdge?.takeIf { it !in captured }
+        return generateSequence(edges.first()) { edge ->
+            edge.nextEdge?.takeIf { it !in captured }
         }.onEach { captured += it }
     }
 
@@ -291,12 +292,9 @@ enum class SearchStrategy {
                         generateSequence(50.0) { (it + .005).takeIf { it <= 120 } },
                         generateSequence(120.0) { (it - .005).takeIf { it >= 60 } }
                     ).flatMap { it }
-                     .toList().toTypedArray().toDoubleArray().let {
-                        TempSchedule(120, it)
-                    }
 
             /* Regarding bestDistance check, I'm pretty sure 17509 is the global optimum, so cheating here to shorten demo for talk :) */
-            while(tempSchedule.next() /*&& bestDistance > 17510.0*/) {
+            tempSchedule.forEach { temperature ->
 
                 Model.edges.sampleDistinct(2)
                         .toList()
@@ -316,7 +314,7 @@ enum class SearchStrategy {
 
                                         if (bestDistance > neighborDistance) {
                                             bestDistance = neighborDistance
-                                            println("${tempSchedule.heat}: $bestDistance->$neighborDistance")
+                                            //println("${tempSchedule.heat}: $bestDistance->$neighborDistance")
                                             bestSolution = Model.toConfiguration()
                                             Model.bestDistanceProperty.set(bestDistance)
                                         }
@@ -326,11 +324,11 @@ enum class SearchStrategy {
 
                                         // Desmos graph for intuition: https://www.desmos.com/calculator/ov22bey8bu
                                         if (weightedCoinFlip(
-                                                        exp((-(neighborDistance - bestDistance)) / tempSchedule.heat)
+                                                        exp((-(neighborDistance - bestDistance)) / temperature)
                                                 )
                                         ) {
                                             animationQueue += swap.animate()
-                                            println("${tempSchedule.heat} accepting degrading solution: $bestDistance -> $neighborDistance")
+                                            //println("${tempSchedule.heat} accepting degrading solution: $bestDistance -> $neighborDistance")
 
                                         } else {
                                             swap.reverse()
@@ -341,8 +339,8 @@ enum class SearchStrategy {
                         }
                 animationQueue += timeline(play = false) {
                     keyframe(1.millis) {
-                        keyvalue(Model.heatRatioProperty, tempSchedule.ratio)
-                        keyvalue(Model.heatProperty, tempSchedule.heat)
+                        keyvalue(Model.heatRatioProperty, temperature / 120.0)
+                        keyvalue(Model.heatProperty, temperature)
                     }
                 }
             }

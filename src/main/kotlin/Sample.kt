@@ -57,3 +57,11 @@ fun <T> List<T>.sampleDistinct(sampleSize: Int): List<T> {
 
 
 fun <T> Sequence<T>.sampleDistinct(sampleSize: Int) = toList().sampleDistinct(sampleSize)
+
+
+
+/**
+ * Simulates a weighted TRUE/FALSE coin flip, with a percentage of probability towards TRUE
+ */
+fun weightedCoinFlip(trueProbability: Double) =
+        ThreadLocalRandom.current().nextDouble(0.0,1.0) <= trueProbability
