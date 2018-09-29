@@ -6,7 +6,7 @@ buildscript {
     repositories {
         mavenCentral()
     }
-    dependencies {nogcbm1
+    dependencies {
 
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }

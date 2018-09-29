@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleObjectProperty
 import tornadofx.*
 import kotlin.math.exp
 
+// animation parameters
 var defaultSpeed = 200.millis
 var speed = defaultSpeed
 
@@ -293,7 +294,6 @@ enum class SearchStrategy {
                         generateSequence(120.0) { (it - .005).takeIf { it >= 60 } }
                     ).flatMap { it }
 
-            /* Regarding bestDistance check, I'm pretty sure 17509 is the global optimum, so cheating here to shorten demo for talk :) */
             tempSchedule.forEach { temperature ->
 
                 Model.edges.sampleDistinct(2)
@@ -301,34 +301,38 @@ enum class SearchStrategy {
                         .let { it.first() to it.last() }
                         .also { (e1,e2) ->
 
-                            val oldDistance = Model.totalDistance
+                            val currentDistance = Model.totalDistance
 
                             e1.attemptTwoSwap(e2)?.also { swap ->
 
-                                val neighborDistance = Model.totalDistance
+                                val newDistance = Model.totalDistance
 
                                 when {
-                                    oldDistance == neighborDistance -> swap.reverse()
-                                    neighborDistance == bestDistance -> swap.reverse()
-                                    oldDistance > neighborDistance -> {
+                                    // Undo swaps that don't improve
+                                    currentDistance == newDistance -> swap.reverse()
+                                    newDistance == bestDistance -> swap.reverse()
 
-                                        if (bestDistance > neighborDistance) {
-                                            bestDistance = neighborDistance
-                                            //println("${tempSchedule.heat}: $bestDistance->$neighborDistance")
+                                    // Swap if there is improvement
+                                    currentDistance > newDistance -> {
+
+                                        if (bestDistance > newDistance) {
+                                            bestDistance = newDistance
+
                                             bestSolution = Model.toConfiguration()
                                             Model.bestDistanceProperty.set(bestDistance)
                                         }
                                         animationQueue += swap.animate()
                                     }
-                                    oldDistance < neighborDistance -> {
+
+                                    // Swap and allow regression only if coin flip allows
+                                    currentDistance < newDistance -> {
 
                                         // Desmos graph for intuition: https://www.desmos.com/calculator/rpfpfiq7ce
                                         if (weightedCoinFlip(
-                                                        exp((-(neighborDistance - bestDistance)) / temperature)
+                                                        exp((-(newDistance - bestDistance)) / temperature)
                                                 )
                                         ) {
                                             animationQueue += swap.animate()
-                                            //println("${tempSchedule.heat} accepting degrading solution: $bestDistance -> $neighborDistance")
 
                                         } else {
                                             swap.reverse()
