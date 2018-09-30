@@ -275,7 +275,9 @@ enum class SearchStrategy {
             }
             Model.distanceProperty.set(Model.totalDistance)
             Model.bestDistanceProperty.set(Model.totalDistance)
-            if (!Model.tourMaintained) throw Exception("Tour broken in TWO_OPT SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
+
+            println("TWO-OPT BEST DISTANCE: ${Model.totalDistance}")
+
         }
     },
 
@@ -364,7 +366,7 @@ enum class SearchStrategy {
                     animationQueue += it.animateChange()
                 }
             }
-            println("$bestDistance<==>${Model.totalDistance}")
+            println("SIMULATED ANNEALING BEST DISTANCE: ${Model.totalDistance}")
         }
     };/*,
 
