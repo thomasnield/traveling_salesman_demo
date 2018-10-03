@@ -298,6 +298,7 @@ enum class SearchStrategy {
 
             tempSchedule.forEach { temperature ->
 
+                // select two random edges
                 Model.edges.sampleDistinct(2)
                         .toList()
                         .let { it.first() to it.last() }
@@ -305,6 +306,7 @@ enum class SearchStrategy {
 
                             val currentDistance = Model.totalDistance
 
+                            // try to swap vertices on the two random edges
                             e1.attemptTwoSwap(e2)?.also { swap ->
 
                                 val newDistance = Model.totalDistance
