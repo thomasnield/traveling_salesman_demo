@@ -88,6 +88,7 @@ class TSPView: View() {
                                     disableProperty().bind(disablePlayButton)
 
                                     setOnAction {
+                                        Model.reset()
                                         ss.animationQueue.play()
                                     }
                                 }

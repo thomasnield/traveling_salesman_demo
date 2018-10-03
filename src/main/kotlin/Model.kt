@@ -190,6 +190,7 @@ enum class SearchStrategy {
     RANDOM {
         override fun execute() {
             animationQueue.clear()
+
             val capturedCities = mutableSetOf<Int>()
 
             val startingEdge = Model.edges.sample()
