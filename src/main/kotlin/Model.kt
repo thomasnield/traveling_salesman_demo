@@ -283,6 +283,7 @@ enum class SearchStrategy {
     },
 
     SIMULATED_ANNEALING {
+
         override fun execute() {
             animationQueue.clear()
             SearchStrategy.RANDOM.execute()
@@ -293,7 +294,7 @@ enum class SearchStrategy {
 
             val tempSchedule = sequenceOf(
                         generateSequence(80.0) { (it - .005).takeIf { it >= 50 } },
-                        generateSequence(50.0) { (it + .005).takeIf { it <= 120 } },
+                        generateSequence(50.0) { (it + .05).takeIf { it <= 120 } },
                         generateSequence(120.0) { (it - .005).takeIf { it >= 60 } }
                     ).flatMap { it }
 

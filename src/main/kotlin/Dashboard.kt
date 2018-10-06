@@ -53,13 +53,6 @@ class TSPView: View() {
                         }
                     }
                 }
-/*                field("BEST DISTANCE") {
-                    textfield {
-                        Model.bestDistanceProperty.onChange {
-                            text = BigDecimal(it).setScale(2, RoundingMode.HALF_UP).toString()
-                        }
-                    }
-                }*/
             }
             fieldset {
                 field("ALGORITHM") {
