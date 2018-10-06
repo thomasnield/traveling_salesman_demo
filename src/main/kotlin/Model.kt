@@ -6,8 +6,7 @@ import tornadofx.*
 import kotlin.math.exp
 
 // animation parameters
-var defaultSpeed = 200.millis
-var speed = defaultSpeed
+var speed = 200.millis
 
 
 data class Point(val x: Double, val y: Double)
@@ -32,10 +31,10 @@ class Edge(city: City) {
     val distance get() = CitiesAndDistances.distances[CityPair(startCity.id, endCity.id)]?:0.0
 
     // animated properties
-    val edgeStartX = SimpleDoubleProperty(startCityProperty.get().x)
-    val edgeStartY = SimpleDoubleProperty(startCityProperty.get().y)
-    val edgeEndX = SimpleDoubleProperty(startCityProperty.get().x)
-    val edgeEndY = SimpleDoubleProperty(startCityProperty.get().y)
+    val edgeStartX = SimpleDoubleProperty(startCity.x)
+    val edgeStartY = SimpleDoubleProperty(startCity.y)
+    val edgeEndX = SimpleDoubleProperty(startCity.x)
+    val edgeEndY = SimpleDoubleProperty(startCity.y)
 
     fun animateChange() = timeline(play = false) {
             keyframe(speed) {
@@ -174,15 +173,11 @@ object Model {
     var heat by heatProperty
 
     fun reset() {
-        speed = 100.millis
-
         CitiesAndDistances.cities.zip(edges).forEach { (c,e) ->
             e.startCity = c
             e.endCity = c
             e.animateChange().play()
         }
-
-        speed = defaultSpeed
     }
 }
 enum class SearchStrategy {
@@ -269,7 +264,7 @@ enum class SearchStrategy {
                             e1.attemptTwoSwap(e2)?.also {
                                 when {
                                     oldDistance <= Model.totalDistance -> it.reverse()
-                                    oldDistance > Model.totalDistance -> it.animate().also { animationQueue += it }
+                                    oldDistance > Model.totalDistance -> animationQueue += it.animate()
                                 }
                             }
                         }
@@ -456,4 +451,4 @@ enum class SearchStrategy {
 
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 fun SequentialTransition.clear() = children.clear()
-operator fun SequentialTransition.plusAssign(other: SequentialTransition) { children.addAll(SearchStrategy.RANDOM.animationQueue.children) }
+operator fun SequentialTransition.plusAssign(other: SequentialTransition) { children.addAll(other) }
