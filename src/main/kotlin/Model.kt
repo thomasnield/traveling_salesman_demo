@@ -161,10 +161,16 @@ object Model {
 
 
     fun toConfiguration() = traverseTour.map { it.startCity to it.endCity }.toList().toTypedArray()
-    fun applyConfiguration(configuration: Array<Pair<City,City>>) = edges.zip(configuration).forEach { (e,c) ->
-        e.startCity = c.first
-        e.endCity = c.second
+
+    fun applyConfiguration(configuration: Array<Pair<City,City>>) {
+
+        Model.reset()
+        edges.zip(configuration).forEach { (e,c) ->
+            e.startCity = c.first
+            e.endCity = c.second
+        }
     }
+    fun applyConfiguration(edges: Iterable<SavedEdge>) = applyConfiguration(edges.map { it.startCity to it.endCity }.toTypedArray())
 
     val heatRatioProperty = SimpleDoubleProperty(0.0)
     var heatRatio by heatRatioProperty
@@ -205,6 +211,7 @@ enum class SearchStrategy {
             Model.bestDistanceProperty.set(Model.totalDistance)
 
             if (!Model.tourMaintained) throw Exception("Tour broken in RANDOM SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
+            saveResult()
         }
     },
 
@@ -229,6 +236,7 @@ enum class SearchStrategy {
             Model.distanceProperty.set(Model.totalDistance)
             Model.bestDistanceProperty.set(Model.totalDistance)
             if (!Model.tourMaintained) throw Exception("Tour broken in GREEDY SearchStrategy \r\n${Model.edges.joinToString("\r\n")}")
+            saveResult()
         }
     },
 
@@ -247,6 +255,8 @@ enum class SearchStrategy {
             }
             Model.distanceProperty.set(Model.totalDistance)
             Model.bestDistanceProperty.set(Model.totalDistance)
+
+            saveResult()
         }
     },
     TWO_OPT {
@@ -272,6 +282,7 @@ enum class SearchStrategy {
             Model.distanceProperty.set(Model.totalDistance)
             Model.bestDistanceProperty.set(Model.totalDistance)
 
+            saveResult()
             println("TWO-OPT BEST DISTANCE: ${Model.totalDistance}")
 
         }
@@ -361,10 +372,9 @@ enum class SearchStrategy {
             // apply best found model
             if (Model.totalDistance > bestDistance) {
                 Model.applyConfiguration(bestSolution)
-                Model.edges.forEach {
-                    animationQueue += it.animateChange()
-                }
             }
+
+            saveResult()
             println("SIMULATED ANNEALING BEST DISTANCE: ${Model.totalDistance}")
         }
     };/*,
@@ -444,10 +454,20 @@ enum class SearchStrategy {
     };*/
 
     val animationQueue = SequentialTransition()
+    val savedEdges = mutableListOf<SavedEdge>()
 
+    fun saveResult() {
+        savedEdges.clear()
+        Model.edges.forEach {
+            savedEdges += SavedEdge(it.startCity, it.endCity)
+        }
+    }
     abstract fun execute()
 }
 
+class SavedEdge(val startCity: City, val endCity: City) {
+    override fun toString() = "$startCity→$endCity"
+}
 
 operator fun SequentialTransition.plusAssign(timeline: Timeline) { children += timeline }
 fun SequentialTransition.clear() = children.clear()

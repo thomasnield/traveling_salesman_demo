@@ -20,7 +20,7 @@ class TSPApp: App(TSPView::class)
 
 class TSPView: View() {
 
-    private val backingList = FXCollections.observableArrayList<Edge> { arrayOf(it.startCityProperty, it.endCityProperty)  }
+    private val backingList = FXCollections.observableArrayList<Edge>()
 
     val selectedEdge = SimpleObjectProperty<Edge>()
 
@@ -32,8 +32,8 @@ class TSPView: View() {
 
             fieldset {
                 field("ROUTE") {
-                    listview(backingList) { 
-                        backingList.onChange { this@listview.refresh() }
+                    listview(backingList) {
+                        selectedEdge.bind(selectionModel.selectedItemProperty())
                     }
                 }
             }
@@ -59,11 +59,9 @@ class TSPView: View() {
 
                                     setOnAction {
                                         Model.reset()
-
                                         ss.execute()
-                                        backingList.setAll(
-                                                Model.traverseTour.toList().observable()
-                                        )
+                                        backingList.clear()
+                                        backingList.setAll(Model.edges)
                                         disablePlayButton.set(false)
                                     }
                                 }
@@ -73,6 +71,9 @@ class TSPView: View() {
 
                                     setOnAction {
                                         Model.reset()
+                                        Model.applyConfiguration(ss.savedEdges)
+                                        backingList.clear()
+                                        Model.traverseTour.forEach { backingList.add(it) }
                                         ss.animationQueue.play()
                                     }
                                 }
@@ -126,7 +127,9 @@ class TSPView: View() {
                         strokeWidth = 3.0
                         stroke = Color.RED
                         selectedEdge.onChange {
-                            stroke = if (it == edge) Color.BLUE else Color.RED
+                            if (it != null) {
+                                stroke = if (it.startCity == edge.startCity && it.endCity == edge.endCity) Color.BLUE else Color.RED
+                            }
                         }
                     }
                 }
