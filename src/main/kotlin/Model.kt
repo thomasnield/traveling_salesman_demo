@@ -246,7 +246,7 @@ enum class SearchStrategy {
             SearchStrategy.RANDOM.execute()
             animationQueue += SearchStrategy.RANDOM.animationQueue
 
-            (1..10).forEach {
+            (1..10).forEach { _ ->
                 Model.intersectConflicts.forEach { (x, y) ->
                     x.attemptTwoSwap(y)?.animate()?.also {
                         animationQueue += it
@@ -299,9 +299,9 @@ enum class SearchStrategy {
             var bestSolution = Model.toConfiguration()
 
             val tempSchedule = sequenceOf(
-                        generateSequence(80.0) { (it - .005).takeIf { it >= 50 } },
-                        generateSequence(50.0) { (it + .05).takeIf { it <= 120 } },
-                        generateSequence(120.0) { (it - .005).takeIf { it >= 60 } }
+                        generateSequence(80.0) { t -> (t - .005).takeIf { it >= 50 } },
+                        generateSequence(50.0) { t -> (t + .05).takeIf { it <= 120 } },
+                        generateSequence(120.0) { t -> (t - .005).takeIf { it >= 60 } }
                     ).flatMap { it }
 
             tempSchedule.forEach { temperature ->
@@ -366,6 +366,7 @@ enum class SearchStrategy {
                 keyframe(1.seconds) {
                     keyvalue(Model.heatRatioProperty, 0)
                     keyvalue(Model.heatProperty, 0)
+                    keyvalue(Model.distanceProperty, Model.bestDistanceProperty.get())
                 }
             }
 
