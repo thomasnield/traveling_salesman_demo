@@ -70,11 +70,15 @@ class TSPView: View() {
                                     textFill = Color.GREEN
                                     disableProperty().bind(disablePlayButton)
 
-                                    setOnAction {
-                                        Model.applyConfiguration(ss.savedEdges)
+                                    setOnAction { _ ->
                                         backingList.clear()
-                                        Model.traverseTour.forEach { backingList.add(it) }
+                                        Model.reset()
                                         ss.animationQueue.play()
+                                        ss.savedEdges
+                                                .map { Edge(it.startCity).apply { startCity = it.startCity; endCity = it.endCity } }
+                                                .forEach {
+                                                    backingList += it
+                                                }
                                     }
                                 }
                             }
