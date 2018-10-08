@@ -176,6 +176,7 @@ object Model {
         edges.zip(configuration).forEach { (e,c) ->
             e.startCity = c.first
             e.endCity = c.second
+            e.animateChange()
         }
     }
     fun applyConfiguration(edges: Iterable<SavedEdge>) = applyConfiguration(edges.map { it.startCity to it.endCity }.toTypedArray())

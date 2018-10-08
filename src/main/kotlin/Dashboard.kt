@@ -71,7 +71,6 @@ class TSPView: View() {
                                     disableProperty().bind(disablePlayButton)
 
                                     setOnAction {
-                                        Model.reset()
                                         Model.applyConfiguration(ss.savedEdges)
                                         backingList.clear()
                                         Model.traverseTour.forEach { backingList.add(it) }
