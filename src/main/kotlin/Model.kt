@@ -265,7 +265,7 @@ enum class SearchStrategy {
             SearchStrategy.RANDOM.execute()
             animationQueue += SearchStrategy.RANDOM.animationQueue
 
-            (1..2000).forEach { iteration ->
+            (1..3000).forEach { iteration ->
                 Model.edges.sampleDistinct(2).toList()
                         .let { it.first() to it.last() }
                         .also { (e1,e2) ->
