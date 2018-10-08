@@ -17,4 +17,4 @@ I found this problem interesting due to its simple objective, and yet astronomic
 * SIMULATED ANNEALING
 
 
-[![TSP Walkthrough on YouTube](https://i.imgur.com/SGwg9pY.png)](https://www.youtube.com/watch?v=j1s69yf4a9Y)
+[![TSP Walkthrough on YouTube](screenshot.png)](https://www.youtube.com/watch?v=j1s69yf4a9Y)
