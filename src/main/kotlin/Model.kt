@@ -18,13 +18,13 @@ fun intersect(a: Point, b: Point, c: Point, d: Point) =
         ccw(a,c,d) != ccw(b,c,d) && ccw(a,b,c) != ccw(a,b,d)
 
 
-class Edge(city: City) {
+class Edge(private val initialCity: City) {
 
-    val startCityProperty = SimpleObjectProperty(city)
+    val startCityProperty = SimpleObjectProperty(initialCity)
     var startCity by startCityProperty
     val startPoint get() = startCity.let { Point(it.x,it.y) }
 
-    val endCityProperty = SimpleObjectProperty(city)
+    val endCityProperty = SimpleObjectProperty(initialCity)
     var endCity by endCityProperty
     val endPoint get() = endCity.let { Point(it.x, it.y) }
 
@@ -36,6 +36,14 @@ class Edge(city: City) {
     val edgeEndX = SimpleDoubleProperty(startCity.x)
     val edgeEndY = SimpleDoubleProperty(startCity.y)
 
+    fun reset() {
+        startCity = initialCity
+        endCity = initialCity
+        edgeStartX.set(startCity.x)
+        edgeStartY.set(startCity.y)
+        edgeEndX.set(endCity.x)
+        edgeEndY.set(endCity.y)
+    }
     fun animateChange() = timeline(play = false) {
             keyframe(speed) {
                 keyvalue(edgeStartX, startCity?.x ?: 0.0)
@@ -179,11 +187,7 @@ object Model {
     var heat by heatProperty
 
     fun reset() {
-        CitiesAndDistances.cities.zip(edges).forEach { (c,e) ->
-            e.startCity = c
-            e.endCity = c
-            e.animateChange().play()
-        }
+        edges.forEach { it.reset() }
     }
 }
 enum class SearchStrategy {
@@ -265,7 +269,7 @@ enum class SearchStrategy {
             SearchStrategy.RANDOM.execute()
             animationQueue += SearchStrategy.RANDOM.animationQueue
 
-            (1..3000).forEach { iteration ->
+            repeat(3000) { _ ->
                 Model.edges.sampleDistinct(2).toList()
                         .let { it.first() to it.last() }
                         .also { (e1,e2) ->
@@ -300,7 +304,7 @@ enum class SearchStrategy {
 
             val tempSchedule = sequenceOf(
                         generateSequence(80.0) { t -> (t - .005).takeIf { it >= 50 } },
-                        generateSequence(50.0) { t -> (t + .05).takeIf { it <= 120 } },
+                        generateSequence(50.0) { t -> (t + .005).takeIf { it <= 120 } },
                         generateSequence(120.0) { t -> (t - .005).takeIf { it >= 60 } }
                     ).flatMap { it }
 
