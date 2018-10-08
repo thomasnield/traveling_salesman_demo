@@ -131,7 +131,7 @@ class Edge(city: City) {
         }
     }
 
-    override fun toString() = "$startCity-$endCity"
+    override fun toString() = "$startCity→$endCity"
 }
 object Model {
 

@@ -20,7 +20,7 @@ class TSPApp: App(TSPView::class)
 
 class TSPView: View() {
 
-    private val backingList = FXCollections.observableArrayList<Edge>()
+    private val backingList = FXCollections.observableArrayList<Edge> { arrayOf(it.startCityProperty, it.endCityProperty)  }
 
     val selectedEdge = SimpleObjectProperty<Edge>()
 
@@ -32,16 +32,8 @@ class TSPView: View() {
 
             fieldset {
                 field("ROUTE") {
-                    listview(backingList) {
-
-                        selectedEdge.bind(selectionModel.selectedItemProperty())
-
-                        cellFormat {
-                            textProperty().bind(
-                                    Bindings.createStringBinding(Callable { "${it.startCity}→${it.endCity}" }, it.startCityProperty, it.endCityProperty)
-                            )
-                        }
-
+                    listview(backingList) { 
+                        backingList.onChange { this@listview.refresh() }
                     }
                 }
             }
