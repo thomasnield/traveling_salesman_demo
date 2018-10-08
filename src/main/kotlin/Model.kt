@@ -375,7 +375,7 @@ enum class SearchStrategy {
             }
 
             saveResult()
-            println("SIMULATED ANNEALING BEST DISTANCE: ${Model.totalDistance}")
+            println("SIMULATED ANNEALING BEST DISTANCE: ${Model.bestDistanceProperty.get()}")
         }
     };/*,
 
