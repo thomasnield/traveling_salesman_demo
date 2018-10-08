@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.scene.image.Image
+import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import tornadofx.*
 import java.math.BigDecimal
@@ -105,6 +106,10 @@ class TSPView: View() {
 
         center = pane {
 
+            addEventHandler(MouseEvent.MOUSE_CLICKED) {
+                println("${it.x},${it.y}")
+            }
+
             imageview(Image("europe.png")) {
                 fitHeight = 1000.0
                 fitWidth = 1000.0
@@ -127,9 +132,7 @@ class TSPView: View() {
                         strokeWidth = 3.0
                         stroke = Color.RED
                         selectedEdge.onChange {
-                            if (it != null) {
-                                stroke = if (it.startCity == edge.startCity && it.endCity == edge.endCity) Color.BLUE else Color.RED
-                            }
+                            stroke = if (it != null && it.startCity == edge.startCity && it.endCity == edge.endCity) Color.BLUE else Color.RED
                         }
                     }
                 }
