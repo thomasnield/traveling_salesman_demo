@@ -109,10 +109,6 @@ class TSPView: View() {
 
         center = pane {
 
-            addEventHandler(MouseEvent.MOUSE_CLICKED) {
-                println("${it.x},${it.y}")
-            }
-
             imageview(Image("europe.png")) {
                 fitHeight = 1000.0
                 fitWidth = 1000.0
