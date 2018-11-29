@@ -70,7 +70,7 @@ class TSPView: View() {
                                     textFill = Color.GREEN
                                     disableProperty().bind(disablePlayButton)
 
-                                    setOnAction { _ ->
+                                    setOnAction {
                                         backingList.clear()
                                         Model.reset()
                                         ss.animationQueue.play()
