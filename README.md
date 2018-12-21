@@ -1,13 +1,5 @@
 # Traveling Salesman Demo
 
-## YouTube Walkthrough
-
-[![](https://img.youtube.com/vi/j1s69yf4a9Y/hqdefault.jpg)](https://youtu.be/j1s69yf4a9Y)
-
-## Featured at KotlinConf 2018 in Amsterdam
-
-[![](https://img.youtube.com/vi/-zTqtEcnM7A/hqdefault.jpg)](https://youtu.be/-zTqtEcnM7A)
-
 ### Built with JavaFX/TornadoFX and Kotlin
 
 This is a Kotlin application (built with [TornadoFX](https://github.com/edvin/tornadofx) visuals) to demonstrate multiple algorithms to solve the [Traveling Salesman Problem](https://en.wikipedia.org/wiki/Travelling_salesman_problem). 
@@ -23,4 +15,10 @@ I found this problem interesting due to its simple objective, and yet astronomic
 * SIMULATED ANNEALING
 
 
-[![TSP Walkthrough on YouTube](screenshot.png)](https://www.youtube.com/watch?v=j1s69yf4a9Y)
+## YouTube Walkthrough
+
+[![](https://img.youtube.com/vi/j1s69yf4a9Y/hqdefault.jpg)](https://youtu.be/j1s69yf4a9Y)
+
+## Featured at KotlinConf 2018 in Amsterdam
+
+[![](https://img.youtube.com/vi/-zTqtEcnM7A/hqdefault.jpg)](https://youtu.be/-zTqtEcnM7A)
