@@ -1,6 +1,12 @@
 # Traveling Salesman Demo
 
-[WATCH VIDEO HERE](https://www.youtube.com/watch?v=j1s69yf4a9Y)
+## YouTube Walkthrough
+
+[![](https://img.youtube.com/vi/j1s69yf4a9Y/hqdefault.jpg)](https://youtu.be/j1s69yf4a9Y)
+
+## Featured at KotlinConf 2018 in Amsterdam
+
+[![](https://img.youtube.com/vi/-zTqtEcnM7A/hqdefault.jpg)](https://youtu.be/-zTqtEcnM7A)
 
 ### Built with JavaFX/TornadoFX and Kotlin
 
