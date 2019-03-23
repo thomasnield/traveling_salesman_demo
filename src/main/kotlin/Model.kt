@@ -251,7 +251,7 @@ enum class SearchStrategy {
             SearchStrategy.RANDOM.execute()
             animationQueue += SearchStrategy.RANDOM.animationQueue
 
-            (1..10).forEach { _ ->
+            repeat(10) {
                 Model.intersectConflicts.forEach { (x, y) ->
                     x.attemptTwoSwap(y)?.animate()?.also {
                         animationQueue += it
@@ -264,25 +264,24 @@ enum class SearchStrategy {
             saveResult()
         }
     },
-    TWO_OPT {
+    HILL_CLIMBING {
         override fun execute() {
             animationQueue.clear()
             SearchStrategy.RANDOM.execute()
             animationQueue += SearchStrategy.RANDOM.animationQueue
 
             repeat(3000) { _ ->
-                Model.edges.sampleDistinct(2).toList()
-                        .let { it.first() to it.last() }
-                        .also { (e1,e2) ->
+                val (e1,e2) = Model.edges.sampleDistinct(2).toList()
 
-                            val oldDistance = Model.totalDistance
-                            e1.attemptTwoSwap(e2)?.also {
-                                when {
-                                    oldDistance <= Model.totalDistance -> it.reverse()
-                                    oldDistance > Model.totalDistance -> animationQueue += it.animate()
-                                }
-                            }
-                        }
+                val oldDistance = Model.totalDistance
+                val swap = e1.attemptTwoSwap(e2)
+
+                when {
+                    swap == null -> Unit // do nothing
+                    oldDistance <= Model.totalDistance -> swap.reverse()
+                    oldDistance > Model.totalDistance -> animationQueue += swap.animate()
+                }
+
             }
             Model.distanceProperty.set(Model.totalDistance)
             Model.bestDistanceProperty.set(Model.totalDistance)
@@ -305,9 +304,9 @@ enum class SearchStrategy {
             var bestSolution = Model.toConfiguration()
 
             val tempSchedule = sequenceOf(
-                        generateSequence(80.0) { t -> (t - .003) }.takeWhile { it >= 50 },
-                        generateSequence(50.0) { t -> (t + .003) }.takeWhile { it <= 120 },
-                        generateSequence(120.0) { t -> (t - .003) }.takeWhile { it >= 30 }
+                        generateSequence(80.0) { t -> (t - .005) }.takeWhile { it >= 50 },
+                        generateSequence(50.0) { t -> (t + .005) }.takeWhile { it <= 120 },
+                        generateSequence(120.0) { t -> (t - .005) }.takeWhile { it >= 30 }
                     ).flatMap { it }
 
             tempSchedule.forEach { temperature ->
