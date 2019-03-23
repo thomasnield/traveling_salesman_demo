@@ -1,15 +1,12 @@
 import javafx.application.Application
-import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.scene.image.Image
-import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import tornadofx.*
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.util.concurrent.Callable
 
 
 fun main(args: Array<String>) = Application.launch(TSPApp::class.java, *args)

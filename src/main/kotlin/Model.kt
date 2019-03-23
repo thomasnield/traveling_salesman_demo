@@ -300,13 +300,14 @@ enum class SearchStrategy {
             SearchStrategy.RANDOM.execute()
             animationQueue += SearchStrategy.RANDOM.animationQueue
 
+
             var bestDistance = Model.totalDistance
             var bestSolution = Model.toConfiguration()
 
             val tempSchedule = sequenceOf(
-                        generateSequence(80.0) { t -> (t - .005).takeIf { it >= 50 } },
-                        generateSequence(50.0) { t -> (t + .005).takeIf { it <= 120 } },
-                        generateSequence(120.0) { t -> (t - .005).takeIf { it >= 60 } }
+                        generateSequence(80.0) { t -> (t - .005) }.takeWhile { it >= 50 },
+                        generateSequence(50.0) { t -> (t + .005) }.takeWhile { it <= 120 },
+                        generateSequence(120.0) { t -> (t - .005) }.takeWhile { it >= 30 }
                     ).flatMap { it }
 
             tempSchedule.forEach { temperature ->
@@ -317,43 +318,40 @@ enum class SearchStrategy {
                         .let { it.first() to it.last() }
                         .also { (e1,e2) ->
 
-                            val currentDistance = Model.totalDistance
+                            val oldDistance = Model.totalDistance
 
                             // try to swap vertices on the two random edges
-                            e1.attemptTwoSwap(e2)?.also { swap ->
+                            val swap = e1.attemptTwoSwap(e2)
 
-                                val newDistance = Model.totalDistance
+                            // track changes in distance
+                            val newDistance = Model.totalDistance
 
-                                when {
-                                    // Undo swaps that don't improve
-                                    currentDistance == newDistance -> swap.reverse()
-                                    newDistance == bestDistance -> swap.reverse()
+                            //if a swap was possible
+                            if (swap != null) {
 
-                                    // Swap if there is improvement
-                                    currentDistance > newDistance -> {
+                                // if swap is superior to curent distance, keep it
+                                if (newDistance < oldDistance) {
 
-                                        if (bestDistance > newDistance) {
-                                            bestDistance = newDistance
+                                    animationQueue += swap.animate()
 
-                                            bestSolution = Model.toConfiguration()
-                                            Model.bestDistanceProperty.set(bestDistance)
-                                        }
-                                        animationQueue += swap.animate()
+                                    // if swap is superior to the last best found solution, save it as the new best solution
+                                    if (newDistance < bestDistance) {
+                                        bestDistance = newDistance
+
+                                        bestSolution = Model.toConfiguration()
+                                        Model.bestDistanceProperty.set(bestDistance)
                                     }
-
-                                    // Swap and allow regression only if coin flip allows
-                                    currentDistance < newDistance -> {
-
-                                        // Desmos graph for intuition: https://www.desmos.com/calculator/rpfpfiq7ce
-                                        if (weightedCoinFlip(
-                                                        exp((-(newDistance - bestDistance)) / temperature)
-                                                )
-                                        ) {
-                                            animationQueue += swap.animate()
-
-                                        } else {
-                                            swap.reverse()
-                                        }
+                                }
+                                // shall I take an inferior move? Let's flip a coin
+                                else {
+                                    // Desmos graph for intuition: https://www.desmos.com/calculator/rpfpfiq7ce
+                                    if (weightedCoinFlip(
+                                                    exp((-(newDistance - oldDistance)) / temperature)
+                                            )
+                                    ) {
+                                        animationQueue += swap.animate()
+                                    } else {
+                                        swap.reverse()
                                     }
                                 }
                             }
