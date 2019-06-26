@@ -1,7 +1,7 @@
 
 
 buildscript {
-    ext.kotlin_version = '1.3.21'
+    ext.kotlin_version = '1.3.30'
 
     repositories {
         mavenCentral()
@@ -31,4 +31,15 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-mainClassName='TSPApp'
+
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Traveling Salesman Demo',
+                'Implementation-Version': 1.0,
+                'Main-Class': 'DashboardKt'
+    }
+    baseName = project.name
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}

@@ -304,8 +304,8 @@ enum class SearchStrategy {
             var bestSolution = Model.toConfiguration()
 
             val tempSchedule = sequenceOf(
-                        generateSequence(80.0) { t -> (t - .005) }.takeWhile { it >= 50 },
-                        generateSequence(50.0) { t -> (t + .005) }.takeWhile { it <= 120 },
+                        generateSequence(80.0) { t -> (t - .05) }.takeWhile { it >= 50 },
+                        generateSequence(50.0) { t -> (t + .05) }.takeWhile { it <= 120 },
                         generateSequence(120.0) { t -> (t - .005) }.takeWhile { it >= 30 }
                     ).flatMap { it }
 
